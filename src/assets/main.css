@@ -7,14 +7,6 @@
   font-weight: normal;
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
-}
-
 @media (hover: hover) {
   a:hover {
     background-color: hsla(160, 100%, 37%, 0.2);
@@ -22,7 +14,7 @@ a,
 }
 
 @media (min-width: 1024px) {
-  body {
+  /* body {
     display: flex;
     place-items: center;
   }
@@ -31,5 +23,26 @@ a,
     display: grid;
     grid-template-columns: 1fr 1fr;
     padding: 0 2rem;
-  }
+  } */
+}
+
+:root {
+  --wave-h: clamp(70px, 8vw, 140px);     /* 波浪高度，随屏幕变化 */
+}
+
+/* 顶部波浪背景：固定在顶部，不拦截点击 */
+.top-wave{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--wave-h);
+  background: url('@/assets/wave-navi.svg') top center / cover no-repeat;
+  z-index: 900;           /* 在内容之上，但在导航栏之下 */
+  pointer-events: none;   /* 纯装饰，不拦截点击 */
+}
+
+/* 给主体内容留出空间（避免被导航与波浪压住） */
+.page{
+  padding-top: calc(var(--nav-h) + var(--wave-h));
 }
