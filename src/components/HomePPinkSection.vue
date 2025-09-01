@@ -1,30 +1,40 @@
+<script setup>
+import HomePPeopleSlider from './HomePPeopleSlider.vue';
+
+</script>
+
+
 <template>
     <section class="section section--green">
 <!-- 内容容器：限制最大宽度，居中 -->
     <div class="container">
       <div class="white-box">
         <!-- 标题 -->
-        <h2 class="circle-title">Title XXXXXXXX</h2>
+        <h2 class="circle-title AA">learn with us!</h2>
         <!-- 一整个 p，用 <br> 来分行 -->
-        <p class="circle-text">
-          XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX <br>
-          XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX <br>
-          XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX <br>
-          XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX <br>
-          XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX <br>
-          XXXXXXXXXXXXXXXXXXXXXXXXXX
+        <p class="circle-text AA">
+          At WAVE, we are reimagining literacy support <br>
+          not as another therapy session <br>
+          but as a fun and engaging experience <br>
+          so DYSLEXIA isnt a barrier <br>
+          ITS A SPARK OF INNOVATION!!!! <br>
         </p>
       </div>
 
       <!-- hibby图片 -->
       <img src="@/assets/Elle_1.png" alt="Elle_1" class="Elle_img" />
-
+      <HomePPeopleSlider />
     </div>
+    
     </section>
 
 </template>
 
 <style scoped>
+
+  .AA {
+    font-family: 'OpenDyslexic', Arial, sans-serif;
+  }
 
   .section {
     position: relative;                     /* 为后续可能的绝对定位子元素提供定位上下文 */
@@ -36,7 +46,7 @@
 
   /* 绿色区块：设置最小高度与背景色，作为页面主体的一个内容带 */
   .section--green {
-    min-height: 700px;                     /* 至少 800px 高 */
+    min-height: 1300px;                     /* 至少 800px 高 */
     background: #FFE0E0;                    /* 绿色背景 */
   }
 

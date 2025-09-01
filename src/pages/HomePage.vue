@@ -7,6 +7,8 @@ import HomePGreenSection from '@/components/HomePGreenSection.vue'
 import HomePPinkSection from '@/components/HomePPinkSection.vue'
 import WaveBlueToGreen from '@/components/WaveBlueToGreen.vue'
 import WaveGreenToPink from '@/components/WaveGreenToPink.vue'
+import HomePHeroSection from '@/components/HomePHeroSection.vue'
+
 
 
 
@@ -16,6 +18,7 @@ import WaveGreenToPink from '@/components/WaveGreenToPink.vue'
   <TopWave />   
   <NavBar />
   <main class="page">
+    <HomePHeroSection />
     <HomePBlueSection />
     <WaveBlueToGreen />
     <HomePGreenSection />

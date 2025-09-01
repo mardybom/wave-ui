@@ -4,10 +4,10 @@
     <div class="container">
       <div class="white-box">
         <!-- 标题 -->
-        <h2 class="circle-title">Title XXXXXXXX</h2>
+        <h2 class="circle-title"> HELLO THERE!!!</h2>
         <!-- 一整个 p，用 <br> 来分行 -->
         <p class="circle-text">
-          XXXXXXXXXXXXXXXX <br>
+           <br>
           XXXXXXXXHelloXXXXXXXX <br>
           XXXXXXXXXXXXXXXXXXX <br>
           XXXXXXXXXXXXXXXXXXXX <br>
@@ -38,14 +38,13 @@
 
   /* 绿色区块：设置最小高度与背景色，作为页面主体的一个内容带 */
   .section--green {
-    min-height: 700px;                     /* 至少 800px 高 */
+    min-height: 500px;                     /* 至少 800px 高 */
     background: #BCF8FF;                    /* 绿色背景 */
-      margin-top: -70px;      /* 👈 往上顶 6px，盖住缝 */
   }
 
   /* ✅ 内容容器：宽度限制 + 居中 + 两侧留白 */
   .container {
-    min-height: 700px;
+    min-height: 500px;
     width: 1200px;  /* 大屏最大 1200px，小屏占 92% */
     margin: 0 auto;            /* 居中 */
     position: relative;        /* 作为子元素（白盒子/松鼠等）的定位参考 */
@@ -53,7 +52,7 @@
 
   .white-box {
     position: absolute;   /* 绝对定位，相对父容器 */
-    top: 20%;             /* 距离父容器顶部 20% */
+    top: 5%;             /* 距离父容器顶部 20% */
 
     left: 10%;
     width: 550px;               /* 宽度 */
@@ -109,7 +108,7 @@
 
   .squirrel-img {
     position: absolute;   /* 绝对定位，相对父容器 */
-    top: 50%;             /* 距离父容器顶部 50% */
+    top: 40%;             /* 距离父容器顶部 50% */
     right: 10%;            /* 距离父容器左边 10% */
     width: 200px;   /* 控制图片大小 */
   }

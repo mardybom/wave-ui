@@ -67,10 +67,12 @@
 
   /* 标题样式 */
   .circle-title {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: bold;
     margin-bottom: 20px;
     color: rgb(0, 0, 0);
+    font-family: 'OpenDyslexic', Arial, sans-serif; 
+
   }
 
   /* 内容文字样式 */
@@ -79,6 +81,8 @@
     line-height: 1.6;
     text-align: center; /* 居中对齐 */
     color: rgb(0, 0, 0);
+    font-family: 'OpenDyslexic', Arial, sans-serif; 
+
   }
 
   .hibby-img {
