@@ -4,16 +4,16 @@
     <div class="container">
       <div class="white-box">
         <!-- 标题 -->
-        <h2 class="circle-title"> HELLO THERE!!!</h2>
+        <h2 class="circle-title"> HELLO!! and Welcome to WAVE</h2>
         <!-- 一整个 p，用 <br> 来分行 -->
         <p class="circle-text">
            <br>
-          XXXXXXXXHelloXXXXXXXX <br>
-          XXXXXXXXXXXXXXXXXXX <br>
-          XXXXXXXXXXXXXXXXXXXX <br>
-          XXXXXXXXXXXXXXXX <br>
-          XXXXXXXXXXXXXXXX
+          Ready for an adventure with ENGLISH? <br>
+          Lets play, learn and grow together!!! <br>
         </p>
+        <div class="buttonToLearningPage">
+          <p class="Learn_button">LEARN</p> 
+        </div>
       </div>
 
       <!-- 小松鼠图片 -->
@@ -28,6 +28,23 @@
 </template>
 
 <style scoped>
+
+  .buttonToLearningPage {
+    height: 50px;
+    width: 100px;
+    background-color: rgb(232, 5, 122);
+    position: absolute;
+    left:40%;
+    top: 80%;
+    border-radius: 20px;
+    text-align: center;
+    line-height: 50px;
+  }
+
+  .Learn_button {
+    color: rgb(242, 242, 242);
+    font-family: 'OpenDyslexic', Arial, sans-serif; 
+  }
 
   /* 让该区段“破出” #app 的最大宽度限制，横向铺满整个视口（全出血） */
   .section {
@@ -74,6 +91,7 @@
     font-weight: bold;
     margin-bottom: 20px;
     color: rgb(0, 0, 0);
+    font-family: 'OpenDyslexic', Arial, sans-serif; 
   }
 
   /* 内容文字样式 */
@@ -82,6 +100,7 @@
     line-height: 1.6;
     text-align: center; /* 居中对齐 */
     color: rgb(0, 0, 0);
+    font-family: 'OpenDyslexic', Arial, sans-serif; 
   }
 
   .bubble_1 {
