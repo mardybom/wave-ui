@@ -10,6 +10,8 @@ const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 const playSound = (char) => {
   console.log('Clicked letter:', char)
 }
+
+import 'swiper/css/navigation'
 </script>
 
 <template>
@@ -23,6 +25,7 @@ const playSound = (char) => {
           :slides-per-view="3"
           :centered-slides="true"
           :space-between="30"
+          :navigation="true"
           class="my-swiper"
         >
           <SwiperSlide v-for="(char, i) in letters" :key="char">
@@ -54,9 +57,12 @@ const playSound = (char) => {
   border: 2px solid #ccc;   /* 边框 */
   border-radius: 12px;      /* 圆角 */
   background: #fdfdfd;      /* 背景色 */
+  
 }
 :deep(.swiper-slide) {
   display: flex;           /* 让每个 slide 内的卡片水平居中 */
   justify-content: center;
 }
+
+
 </style>
