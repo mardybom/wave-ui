@@ -17,10 +17,17 @@
 <style scoped>
 .nav {
   position: fixed;
-  top: 0; left: 0;
-  height: 60px; width: 100%;
-  display: flex; justify-content: space-between; align-items: center;
-  background: #fff; padding: 12px 50px; z-index: 1000; overflow: visible;
+  top: 0;
+  left: 0;
+  height: 60px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  padding: 12px 50px;
+  z-index: 1000;
+  overflow: visible;
 }
 .logo { height: 100px; transform: translateY(24px); }
 .nav-links { display: flex; gap: 30px; transform: translateX(-20%); }
