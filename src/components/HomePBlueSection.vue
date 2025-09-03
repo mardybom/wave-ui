@@ -11,9 +11,9 @@
           Ready for an adventure with ENGLISH? <br>
           Lets play, learn and grow together!!! <br>
         </p>
-        <div class="buttonToLearningPage">
+        <router-link to="/learn" class="buttonToLearningPage">
           <p class="Learn_button">LEARN</p> 
-        </div>
+        </router-link>
       </div>
 
       <!-- 小松鼠图片 -->
