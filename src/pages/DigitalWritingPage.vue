@@ -52,6 +52,22 @@ const captureAndBuildJson = async () => {
   <div class="background">
     <div class="wrapper">
       <GameTopBar title="Digital writing" />
+      <div class="instructionWrapper">
+        <p class="instruction p1">
+           This game helps children connect letters with their sounds <br/>
+          through an interactive “listen–write–feedback” process.
+        </p>
+        <details>
+          <summary class="more">How to play</summary>
+          <p class="instruction">
+          1.	Click <span class="mark">Play</span> to hear the standard pronunciation of a letter.<br/>
+          2.	Use the mouse to write the letter on the canvas.<br/>
+          3.	Click <span class="mark">Capture</span>, and the squirrel will give feedback.<br/>
+          4.	Click <span class="mark">Next</span> to switch to a new letter.<br/>
+          5.	If you’re not sure, click <span class="mark">Show Letter</span> to reveal the answer.<br/>
+        </p>
+        </details>
+      </div>
       <div class="imgWrapper">
         <div class="imgResponse">
           <img class="imgtrue" v-if="isCorrect === true" :src="trueImg" alt="Correct" />
@@ -89,6 +105,26 @@ const captureAndBuildJson = async () => {
   justify-content: center; 
 }
 
+.p1 {
+  margin-top: 60px;
+}
+
+.instruction {
+  color: black;
+  font-size: 18px;
+  font-family: 'OpenDyslexic', Arial, sans-serif; 
+}
+
+.more {
+  color: #FD9B2D;
+  font-family: 'OpenDyslexic', Arial, sans-serif; 
+}
+
+.mark {
+  color: #fa6d09;
+  font-weight: bold;
+}
+
 .capButtonWrapper {
   display: flex;
 }
@@ -113,6 +149,7 @@ const captureAndBuildJson = async () => {
 .imgWrapper {
   display: flex;
   justify-content: center; 
+  margin-top: -30px;
 }
 
 .imgResponse {
