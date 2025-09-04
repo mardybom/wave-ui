@@ -53,10 +53,13 @@ const captureAndBuildJson = async () => {
     <div class="wrapper">
       <GameTopBar title="Digital writing" />
       <div class="instructionWrapper">
-        <p class="instruction p1">
-           This game helps children connect letters with their sounds <br/>
-          through an interactive “listen–write–feedback” process.
-        </p>
+        <div class="instrAndHibby">
+            <p class="instruction p1">
+              This game helps children connect <br/>letters with their sounds 
+              through an <br/>interactive “listen–write–feedback” process.
+            </p>
+            <img src="@/assets/hibby_1.png" alt="hibby_1" class="hibby-img" />
+        </div>
         <details>
           <summary class="more">How to play</summary>
           <p class="instruction">
@@ -105,8 +108,19 @@ const captureAndBuildJson = async () => {
   justify-content: center; 
 }
 
+.instrAndHibby {
+  display: flex;
+}
+
 .p1 {
-  margin-top: 60px;
+  margin-top: 140px;
+}
+
+.hibby-img {
+  width: 200px;        /* 调整大小：设置宽度 */
+  height: auto;        /* 高度自动，保持比例 */
+  transform: scaleX(-1); /* 水平翻转 */
+  margin-top: 40px;
 }
 
 .instruction {
