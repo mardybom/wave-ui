@@ -26,6 +26,9 @@ import { Navigation, Mousewheel, Keyboard } from 'swiper/modules'
       
         <div class="swiper-box">
           <div class="textWrapper">
+            <div class="hippo">
+              <img src="@/assets/Elle_1.png" alt="Elle_1" class="Elle_img" />
+            </div>
              <p class="text">
               This game helps children connect letters with their sounds.<br/>  
               Click the cards to play the sound, and use the keyboard arrows, trackpad, 
@@ -71,11 +74,18 @@ import { Navigation, Mousewheel, Keyboard } from 'swiper/modules'
   text-align: center;
 }
 
+.Elle_img {
+  width: 200px;        /* 调整大小：设置宽度 */
+  height: auto;        /* 高度自动，保持比例 */
+  transform: scaleX(-1); /* 水平翻转 */
+}
+
 .text {
   color: #000;
   font-size: 18px;
   font-family: 'OpenDyslexic', Arial, sans-serif; 
   padding-bottom: 30px;
+  margin-top: 60px; 
 }
 
 .swiper-box {
