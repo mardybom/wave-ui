@@ -129,7 +129,4 @@ const captureAndBuildJson = async () => {
   object-fit: contain; /* 保持比例缩放，完整显示 */
 }
 
-.textFalse {
-  color: #000;
-}
 </style>
