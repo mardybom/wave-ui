@@ -1,35 +1,22 @@
-<script setup>
-// 引入可复用的导航栏组件（位于 src/components/NavBar.vue）
-import NavBar from '@/components/NavBar.vue'
-import TopWave from '@/components/TopWave.vue' 
-import HomePBlueSection from '@/components/HomePBlueSection.vue'
-import HomePGreenSection from '@/components/HomePGreenSection.vue'
-import HomePPinkSection from '@/components/HomePPinkSection.vue'
-import WaveBlueToGreen from '@/components/WaveBlueToGreen.vue'
-import WaveGreenToPink from '@/components/WaveGreenToPink.vue'
-import HomePHeroSection from '@/components/HomePHeroSection.vue'
-
-
-
-
-</script>
-
 <template>
-  <TopWave />   
   <NavBar />
-  <main class="page">
-    <HomePHeroSection />
-    <HomePBlueSection />
-    <WaveBlueToGreen />
-    <HomePGreenSection />
-    <WaveGreenToPink />
-    <HomePPinkSection />
+  <!-- Full-width sections; each section handles its own inner container -->
+  <HomePHeroSection />
 
-
-
-
-
-
-  </main>
+  <!-- Keep your existing sections as-is (they should NOT be wrapped
+       in a page-level .container). If any are wrapped, remove it. -->
 </template>
 
+<script setup>
+import NavBar from '@/components/NavBar.vue'
+import HomePHeroSection from '@/components/HomePHeroSection.vue'
+import HomePBlueSection from '@/components/HomePBlueSection.vue'
+import WaveBlueToGreen from '@/components/WaveBlueToGreen.vue'
+import HomePGreenSection from '@/components/HomePGreenSection.vue'
+import WaveGreenToPink from '@/components/WaveGreenToPink.vue'
+import HomePPinkSection from '@/components/HomePPinkSection.vue'
+</script>
+
+<style scoped>
+/* page-level styles not required; keep sections responsible for layout */
+</style>

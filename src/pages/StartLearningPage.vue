@@ -14,6 +14,13 @@ import EpicButton from '@/components/StartLearningPage/EpicButton.vue'
 <template>
   <div class="start-learning-page">
     <NavBar />
+    <div class="sky" aria-hidden="true">
+      <svg class="wave" viewBox="0 0 1440 220" preserveAspectRatio="none">
+        <path
+          d="M0,60 C180,120 360,0 540,40 C720,80 900,200 1080,160 C1260,120 1440,40 1440,40 L1440,0 L0,0 Z"
+          fill="#CFEFFF"/>
+      </svg>
+    </div>
     <!-- 页面内容 -->
     <startPart />
     <EpicButton label="Alphabet mastery core" @click="showAlphabetModal" />
