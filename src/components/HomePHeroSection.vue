@@ -12,8 +12,8 @@
     <!-- Inner content constrained -->
     <div class="container grid">
       <header class="copy">
-        <h1 id="hero-title">Ride the WAVE to Reading Success!</h1>
-        <p class="tagline">Play games, hear sounds, and practice writing. WAVE makes learning joyful!</p>
+        <h1 id="hero-title">Surf the WAVE and Master English!</h1>
+        <p class="tagline">Play, Learn and practice English with us. WAVE makes learning joyful!</p>
 
         <div class="cta">
           <router-link to="/learn" class="btn btn--primary" aria-label="Start Playing">
@@ -61,7 +61,7 @@
 .container{
   max-width: 1650px;
   margin: 0 auto;
-  padding: 24px 24px 56px;
+  padding: 0px 24px 56px;
 }
 .grid{
   display:grid;
@@ -78,8 +78,8 @@
 .copy h1{
   font-family: 'OpenDyslexic', system-ui, sans-serif;
   font-weight: 800;
-  font-size: clamp(28px, 4vw, 54px);
-  margin: 0 0 8px 0;
+  font-size: 50px;
+  margin: 0 0 8px 0px;
   color: var(--ink-900);
 }
 

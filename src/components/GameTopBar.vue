@@ -1,59 +1,79 @@
 <template>
-  <header class="game-topbar">
-    <!-- 固定返回到 /learn -->
-    <router-link to="/learn" class="back">< Back</router-link>
-    <!-- 中间显示当前游戏名（由父组件传入） -->
-    <h1 class="title">{{ title }}</h1>
-  </header>
+  <nav class="nav">
+    <div class="navbar-inner">
+      <router-link to="/learn" class="back">< Back</router-link>
+
+      <div class="links">
+        <router-link to="/"        class="link" active-class="active">
+          <span class="icon" aria-hidden="true">🏠</span> Home
+        </router-link>
+        <router-link to="/learn"   class="link" active-class="active">
+          <span class="icon" aria-hidden="true">📖</span> Start Learning
+        </router-link>
+        <router-link to="/parents" class="link" active-class="active">
+          <span class="icon" aria-hidden="true">💜</span> Parents Hub
+        </router-link>
+      </div>
+    </div>
+  </nav>
 </template>
 
 <script setup>
-defineProps({
-  title: { type: String, default: 'Game' }
-})
+/* none */
 </script>
 
 <style scoped>
-.game-topbar {
-  height: 60px;
-  background: #fff;
-  position: fixed;
-  top: 0;
-  left: 0;
+.nav{
+  position: sticky; top: 0; left: 0; right: 0;
   width: 100%;
-  z-index: 2000;
+  z-index: 999;
+  background: linear-gradient(to right, #cfeffe 0%, #cfeffe 100%);
+  backdrop-filter: saturate(140%) blur(6px);
+  border-bottom: 1px solid rgba(15,42,67,0.06);
+  border: none !important;
+  box-shadow: none !important;
 }
 
-.back {
-  position: absolute;
-  left: 5%;
-  top: 50%;
-  transform: translate(-50%, -50%); 
-  padding:10px 20px;
-  text-decoration: none;
-  font-size: 18px;
-  font-family: 'OpenDyslexic', Arial, sans-serif; 
-  color: black;
+/* full width bar, but center the contents up to a max width */
+.navbar-inner{
+  height: 100px;          /* pick the exact height your bar uses */
+  max-width: 1700px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 24px;
+  font-weight: 800;
+}
+.back{
+  border-radius: 12px;
+  padding:8px 10px;
+}
+.back:hover{ background: rgba(15,42,67,.06); }
+
+.brand{ display:flex; align-items:center; gap:10px; }
+.logo{ width:100px; height:100px; object-fit:contain; }
+.brand-text{
+  font-family: 'OpenDyslexic', system-ui, sans-serif;
+  font-weight: 800; letter-spacing: .4px;
+  transform: translateX(-15%);
+  color: var(--ink-900);
+  font-size: 24px;
 }
 
-.title {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%); 
-  text-align: center;
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0;
-  pointer-events: none;     /* 不挡住返回按钮的点击 */
-  font-family: 'OpenDyslexic', Arial, sans-serif; 
-  color: black;
+.links{ display:flex; align-items:center; gap:8px; }
+.link{
+  display:flex; align-items:center; gap:8px;
+  padding:8px 10px; border-radius: 12px;
+  color: var(--ink-700); font-weight: 600;
+  font-size: 24px; font-family: 'OpenDyslexic';
 }
+.link:hover{ background: rgba(15,42,67,.06); }
+.active{ background: rgba(15,42,67,.08); color: var(--ink-900); }
 
-.back:hover {
-  color: #FD9B2D;
-  background: none;
-  font-size: 22px;
-  font-weight: bold;
+@media (max-width: 720px){
+  .brand-text{ display:none; }
+  .link{ gap:6px; padding:8px; }
 }
 </style>
