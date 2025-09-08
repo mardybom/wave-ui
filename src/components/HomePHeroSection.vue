@@ -26,7 +26,7 @@
       </header>
 
       <div class="mascots">
-        <img src="@/assets/group_photo_1.png" alt="" class="mascot" style="--d:0s" />
+        <img src="@/assets/group_photo_1.png" alt="" class="mascot" />
       </div>
     </div>
   </section>
@@ -117,7 +117,27 @@
   transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
 }
 
-.btn--primary{ background: var(--cta-1); color:#14120F; }
+.btn--primary{ background: var(--cta-1);
+  color:#14120F; 
+  position: relative;
+  z-index: 0;
+  animation: popGlow 3s ease-in-out infinite; 
+}
+/* Keyframes for the glow */
+@keyframes popGlow {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0px rgba(0, 180, 255, 0.6);   /* soft blue start */
+  }
+  50% {
+    transform: scale(1.1); /* noticeable pop */
+    box-shadow: 0 0 35px rgba(255, 230, 0, 0.9);  /* bright yellow glow */
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0px rgba(0, 180, 255, 0.6);   /* back to soft blue */
+  }
+}
 .btn--secondary{ background: var(--cta-2); color:#14120F; transform:translateX(-20%) }
 
 .btn:hover{ transform: translateY(-1px); box-shadow: 0 12px 24px rgba(0,0,0,.9); }
@@ -129,15 +149,7 @@
 .mascot{
   width: clamp(700px, 22vw, 220px); height:auto;
   filter: drop-shadow(0 12px 12px rgba(0,0,0,.12));
-  animation: bob 3.2s ease-in-out infinite;
-  animation-delay: var(--d, 0s);
 }
-@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
 
-@media (max-width: 960px){
-  .grid{ grid-template-columns: 1fr; text-align:center; }
-  .copy{ margin-inline:auto; }      /* center the constrained copy on small screens */
-  .cta{ justify-content:center; }   /* stack centered when space is tight */
-}
 </style>
 

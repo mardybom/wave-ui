@@ -23,14 +23,19 @@ const scrollCards = (dir) => {
 
 <template>
   <div class="start-learning-page">
-    <NavBar />
     <div class="sky" aria-hidden="true">
-      <svg class="wave" viewBox="0 0 1440 220" preserveAspectRatio="none">
+     <svg class="wave" viewBox="0 0 1440 220" preserveAspectRatio="none">
         <path
-          d="M0,60 C180,120 360,0 540,40 C720,80 900,200 1080,160 C1260,120 1440,40 1440,40 L1440,0 L0,0 Z"
+          d="M0,100 
+            C180,180 360,20 540,100 
+            C720,180 900,20 1080,100 
+            C1260,180 1440,20 1440,100 
+            L1440,0 L0,0 Z"
           fill="#CFEFFF"/>
       </svg>
+
     </div>
+    <NavBar />
 
     <main class="main-row">
       <!-- LEFT: heading + card grid (docked left) -->
@@ -40,7 +45,6 @@ const scrollCards = (dir) => {
         </h1>
 
         <div class="cards-carousel">
-          <button class="carousel-nav prev" @click="scrollCards(-1)" aria-label="Previous games">‹</button>
 
           <div class="cards-track" ref="cardsTrack">
             <ButtonCard label="Alphabet mastery core" @click="showAlphabetModal" />
@@ -51,8 +55,6 @@ const scrollCards = (dir) => {
             <ButtonCard label="coming soon" />
             <ButtonCard label="coming soon" />
           </div>
-
-          <button class="carousel-nav next" @click="scrollCards(1)" aria-label="Next games">›</button>
         </div>
       </section>
 
@@ -72,23 +74,31 @@ const scrollCards = (dir) => {
 /* top sky wave */
 .sky{
   position: absolute;
+  top: var(--nav-h);
   left: 0; right: 0;
-  top: var(--nav-h);            
-  height: 200px;
+  height: 300px;                /* adjust if you want a taller arc */
+  overflow: hidden;             /* <-- important (prevents overflow) */
+  z-index: 0;
   pointer-events: none;
-  z-index: 0
 }
-.wave{ width:250%; height:350%; display:block; }
+.wave{
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);  /* centers the wide SVG */
+  width: 150%;                   /* restore the width you had */
+  height: 100%;
+  display: block;
+}
 
 .start-learning-page {
+  position: relative;
   background: var(--bg-cream);   /* same as Home */
-  min-height: 100vh;
   width: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;              /* match Home hero to hide the wave overflow */
-  padding-top: 24px;
-  min-height: 100vh;
+  overflow: hidden;
+  min-height: 70vh;
+  align-items: center;
 }
 
 .main-row {
@@ -97,13 +107,13 @@ const scrollCards = (dir) => {
   flex: 1;
   display: flex;
   align-items: center;
-  justify-content: space-between;   /* left content & right mascot */
-  gap: 3rem;
-  padding: 2rem clamp(1rem, 4vw, 4rem);
+  justify-content: space-between;  
+  padding: 2rem clamp(8rem, 4vw, 4rem);
 }
 
 .left-col {
   flex: 1 1 58ch;                   /* grow, but keep a nice readable width */
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -111,6 +121,7 @@ const scrollCards = (dir) => {
 
 .lead {
   margin: 0;
+  padding: 40px 2px 0px;
   font-size: clamp(1.25rem, 2.5vw, 2rem);
   font-family: 'OpenDyslexic', Arial, sans-serif;
   text-align: left;                  /* left-aligned per your request */
@@ -120,7 +131,8 @@ const scrollCards = (dir) => {
   display: flex;
   align-items: center;
   gap: 10px;
-  max-width: 1075px;             /* tune if you want a wider row */
+  max-width: 1075px; 
+  width: min(100%, 1075px);            
 }
 
 .cards-track{
@@ -128,9 +140,11 @@ const scrollCards = (dir) => {
   gap: 16px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
+  max-width: 95%;
   -webkit-overflow-scrolling: touch;
-  padding: 6px 2px 10px;      
-  white-space: wrap;         
+  padding: 30px 2px 10px;      
+  white-space: normal;  
+  box-sizing: border-box;       
 }
 
 .cards-track .button-card{

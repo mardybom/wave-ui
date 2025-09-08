@@ -10,4 +10,8 @@ import NavBar from '@/components/NavBar.vue'
 
 <style scoped>
 main { display:block; }
+html, body {
+  overflow-x: hidden;   /* block accidental horizontal scroll */
+}
+
 </style>
