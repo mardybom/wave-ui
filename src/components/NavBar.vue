@@ -29,7 +29,7 @@
 .nav{
   position: sticky; top: 0; left: 0; right: 0;
   width: 100%;
-  z-index: 1000;
+  z-index: 99;
   background: linear-gradient(to right, #cfeffe 0%, #cfeffe 100%);
   backdrop-filter: saturate(140%) blur(6px);
   border-bottom: 1px solid rgba(15,42,67,0.06);
