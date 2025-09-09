@@ -2,10 +2,8 @@
 import { ref } from 'vue'
 import NavBar from '@/components/NavBar.vue'
 import ButtonCard from '@/components/StartLearningPage/ButtonCard.vue'
-import AlphabetMasteryModal from '@/components/StartLearningPage/AlphabetMasteryModal.vue'
 
-const showModal = ref(false)
-const showAlphabetModal = () => { showModal.value = true }
+
 const cardsTrack = ref(null)
 
 const scrollCards = (dir) => {
@@ -47,9 +45,8 @@ const scrollCards = (dir) => {
         <div class="cards-carousel">
 
           <div class="cards-track" ref="cardsTrack">
-            <ButtonCard label="Alphabet mastery core" @click="showAlphabetModal" />
-            <ButtonCard label="coming soon" />
-            <ButtonCard label="coming soon" />
+            <ButtonCard label="Letter sound mapping" to="/letter-sound" />
+            <ButtonCard label="Digital Writing" to="/Digital-writing"/>
             <ButtonCard label="coming soon" />
             <ButtonCard label="coming soon" />
             <ButtonCard label="coming soon" />
@@ -60,9 +57,6 @@ const scrollCards = (dir) => {
 
       <!-- RIGHT: mascot -->
       <img src="@/assets/squirrel_1.png" alt="Squirrel mascot" class="mascot" />
-
-      <!-- Modal -->
-      <AlphabetMasteryModal v-if="showModal" @close="showModal=false" />
     </main>
   </div>
 </template>
