@@ -1,8 +1,17 @@
-<script setup>
-import HomePage from './pages/HomePage.vue'
+<template>
+  <main>
+    <RouterView />
+  </main>
+</template>
 
+<script setup>
+import NavBar from '@/components/NavBar.vue'
 </script>
 
-<template>
-  <router-view /> 
-</template>
+<style scoped>
+main { display:block; }
+html, body {
+  overflow-x: hidden;   /* block accidental horizontal scroll */
+}
+
+</style>

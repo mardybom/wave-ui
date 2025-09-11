@@ -1,43 +1,67 @@
 <template>
-  <!-- 有 to 就用 router-link，否则就是普通 div -->
-  <component :is="to ? 'router-link' : 'div'" :to="to" class="button-card" role="button">
-    <span class="label">{{ label }}</span>
+  <component
+    :is="to ? 'router-link' : 'div'"
+    :to="to"
+    class="button-card"
+    :class="{ 'button-card--compact': compact }"
+    role="button"
+    v-bind="$attrs"
+  >
+    <span class="label"><slot>{{ label }}</slot></span>
   </component>
 </template>
 
 <script setup>
 defineProps({
-  label: { type: String, default: 'assign a name!!' },
-  to:    { type: String, default: '' } // 例如 '/learn/alphabet'
+  label:   { type: String, default: 'assign a name!!' },
+  to:      { type: String, default: '' },   // e.g. '/learn/alphabet'
+  compact: { type: Boolean, default: false } // 👈 new
 })
 </script>
 
 <style scoped>
+/* Base “playing card” styles (used on Start page) */
 .button-card {
-  display: inline-flex;                  /* 行内块级弹性容器，可以和别的元素在一行 */
-  align-items: center;                   /* 子元素（文字）在垂直方向居中 */
-  justify-content: center;               /* 子元素（水平方向居中） */
-  width: 400px;                          /* 固定按钮宽度 */
-  height: 80px;                          /* 固定按钮高度 */
-  background: #fff;                      /* 背景颜色：白色 */
-  border: 1px solid #d6d6d6;             /* 灰色边框（stroke 效果） */
-  border-radius: 20px;                   /* 圆角半径 20px */
-  box-shadow: 0 8px 18px rgba(0,0,0,.08);/* 阴影，向下 8px，模糊 18px，黑色透明度 0.08 */
-  text-decoration: none;                 /* 去掉文字下划线（a 标签默认有） */
-  color: #111;                           /* 文字颜色为深灰（接近黑色） */
-  cursor: pointer;                       /* 鼠标悬停时显示小手 */
-  user-select: none;                     /* 禁止文字被选中 */
-  transition: transform .15s ease,       /* 鼠标交互时，缩放动画 */
-              box-shadow .15s ease;      /* 鼠标交互时，阴影动画 */
+  width: 240px;
+  aspect-ratio: 5 / 7;                 /* 2.5in:3.5in look */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 2px solid #1f1f1f;
+  border-radius: 18px;
+  box-shadow: 0 10px 18px rgba(0,0,0,.12);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  user-select: none;
+  transition: transform .15s ease, box-shadow .15s ease;
 }
 .button-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(0,0,0,.12);
-  color: #FD9B2D;   /* 悬停时文字变橘色 */
+  transform: translateY(-3px);
+  box-shadow: 0 16px 28px rgba(0,0,0,.16);
+  color: #FD9B2D;
 }
 .label {
-  font-size: 20px;
+  font-size: 25px;
+  font-weight: 300;
   text-align: center;
   font-family: 'OpenDyslexic', Arial, sans-serif;
+  padding: 0 .75rem;
+}
+
+/* 👇 Compact variant for the MODAL (restores smaller pill/button look) */
+.button-card--compact {
+  width: auto;
+  aspect-ratio: auto;        /* cancel card ratio */
+  min-width: 220px;
+  height: auto;
+  padding: .85rem 1.25rem;
+  border-radius: 15px;
+  box-shadow: 0 6px 12px rgba(0,0,0,.10);
+}
+.button-card--compact .label {
+  font-size: 25px;
+  line-height: 1.25;
 }
 </style>
