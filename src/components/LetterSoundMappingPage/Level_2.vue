@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import GameTopBar from '@/components/GameTopBar.vue'
 import ProgressTracker from '@/components/LetterSoundMappingPage/ProgressTracker.vue'
-import LetterCard_level2 from '@/components/LetterSoundMappingPage/LetterCard_level2.vue'
+import LetterCard_level2 from '@/components/LetterSoundMappingPage/letterCard_level2.vue'
 
 const emit = defineEmits(['request-prev-level','request-start-learning'])
 
