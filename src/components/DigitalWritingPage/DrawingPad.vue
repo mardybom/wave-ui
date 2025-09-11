@@ -1,31 +1,56 @@
-<!-- src/components/DigitalWritingPage/DrawingPad.vue -->
 <template>
-  <div class="pad">
-    <canvas ref="canvas" width="800" height="400"></canvas>
-    <button class="clear" @click="clearCanvas">Clear</button>
-  </div>
+  <canvas ref="canvas" class="pad"></canvas>
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
 const canvas = ref(null)
-let ctx
-let drawing = false
-let lastX = 0, lastY = 0
+let ctx, drawing = false, lastX = 0, lastY = 0
+
+// Resize the canvas to match its CSS size * devicePixelRatio,
+// and scale the context so we can draw using CSS pixel units.
+const resizeCanvas = () => {
+  const dpr = Math.max(1, window.devicePixelRatio || 1)
+  const rect = canvas.value.getBoundingClientRect()
+
+  // Only resize if needed to avoid clearing on every call
+  const displayWidth  = Math.round(rect.width  * dpr)
+  const displayHeight = Math.round(rect.height * dpr)
+
+  if (canvas.value.width !== displayWidth || canvas.value.height !== displayHeight) {
+    canvas.value.width  = displayWidth
+    canvas.value.height = displayHeight
+
+    ctx = canvas.value.getContext('2d')
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0) // now 1 unit == 1 CSS pixel
+    initStyle()
+    whiteBg()
+  }
+}
+
+const initStyle = () => {
+  ctx.lineWidth = 4
+  ctx.lineCap = 'round'
+  ctx.strokeStyle = '#111'
+}
+
+const whiteBg = () => {
+  if (!ctx || !canvas.value) return
+  ctx.clearRect(0, 0, canvas.value.width, canvas.value.height)
+}
 
 const getPos = (e) => {
   const rect = canvas.value.getBoundingClientRect()
-  return { x: e.clientX - rect.left, y: e.clientY - rect.top }
+  const t = e.touches?.[0]
+  return {
+    x: (t ? t.clientX : e.clientX) - rect.left,
+    y: (t ? t.clientY : e.clientY) - rect.top
+  }
 }
 
-const onMouseDown = (e) => {
-  drawing = true
-  const p = getPos(e)
-  lastX = p.x; lastY = p.y
-}
-
-const onMouseMove = (e) => {
+const start = (e) => { const p = getPos(e); drawing = true; lastX = p.x; lastY = p.y }
+const move  = (e) => {
   if (!drawing) return
   const p = getPos(e)
   ctx.beginPath()
@@ -34,70 +59,47 @@ const onMouseMove = (e) => {
   ctx.stroke()
   lastX = p.x; lastY = p.y
 }
+const end = () => { drawing = false }
 
-const onMouseUp = () => { drawing = false }
+const clear = () => { ctx.clearRect(0, 0, canvas.value.width, canvas.value.height) }
+const getImage = () => canvas.value.toDataURL('image/png')
 
-const clearCanvas = () => {
-  ctx.fillStyle = '#fff'
-  ctx.fillRect(0, 0, canvas.value.width, canvas.value.height)
-}
-
+let ro // ResizeObserver
 onMounted(() => {
   ctx = canvas.value.getContext('2d')
-  ctx.lineWidth = 4
-  ctx.lineCap = 'round'
-  ctx.strokeStyle = '#111'
-  clearCanvas() // 设为白底
+  resizeCanvas() // initial
 
-  // 事件
-  canvas.value.addEventListener('mousedown', onMouseDown)
-  canvas.value.addEventListener('mousemove', onMouseMove)
-  window.addEventListener('mouseup', onMouseUp) // 防止移出画布时卡住
+  // Keep it crisp on resizes / layout changes
+  ro = new ResizeObserver(resizeCanvas)
+  ro.observe(canvas.value)
+  window.addEventListener('resize', resizeCanvas)
+
+  canvas.value.addEventListener('mousedown', start)
+  canvas.value.addEventListener('mousemove', move)
+  window.addEventListener('mouseup', end)
+  canvas.value.addEventListener('touchstart', (e)=>{ e.preventDefault(); start(e) }, { passive:false })
+  canvas.value.addEventListener('touchmove',  (e)=>{ e.preventDefault(); move(e)  }, { passive:false })
+  window.addEventListener('touchend', end)
 })
 
 onBeforeUnmount(() => {
   if (!canvas.value) return
-  canvas.value.removeEventListener('mousedown', onMouseDown)
-  canvas.value.removeEventListener('mousemove', onMouseMove)
-  window.removeEventListener('mouseup', onMouseUp)
+  ro?.disconnect()
+  window.removeEventListener('resize', resizeCanvas)
+  canvas.value.removeEventListener('mousedown', start)
+  canvas.value.removeEventListener('mousemove', move)
+  window.removeEventListener('mouseup', end)
+  window.removeEventListener('touchend', end)
 })
 
-// 暴露一个方法，让父组件可以调用
-const getImage = () => {
-  return canvas.value.toDataURL('image/png')  // 转 base64
-}
-defineExpose({ getImage })
+defineExpose({ getImage, clear })
 </script>
 
-
-
 <style scoped>
-.pad { display: block; }
-canvas {
-  background: #fff;              /* 白色画布 */
-  border: 1px solid #ddd;        /* 细边框（可去掉） */
-  border-radius: 8px;            /* 轻微圆角（可去掉） */
-  cursor: crosshair;
+.pad {
+  width: 80%;
+  height: 80%;
   display: block;
+  touch-action: none; /* prevents panning/zooming from interfering with drawing */
 }
-
-.clear {
-  margin-top: 10px;
-  padding: 6px 12px;
-  background: #f7f7f7;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 16px;
-  font-family: 'OpenDyslexic', Arial, sans-serif; 
-}
-
-.clear:hover {
-  color: #FD9B2D;
-}
-
-/* .clear:hover {
-  color: #FD9B2D;
-  font-size: 18px;
-  font-weight: bold;
-} */
 </style>

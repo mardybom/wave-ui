@@ -372,7 +372,7 @@ watch(currentIndex, makeRound)
   padding:12px 20px; font-weight:700; cursor:pointer;
 }
 .btn.primary{ background:#FD9B2D; color:#0f2b46; border-color:#FD9B2D; }
-.link{ background:none; bottom: 100px; top: 20px; border:0; text-decoration:underline; color:#0f2b46; cursor:pointer; font-weight:700; }
+.link{ background:none; transform:translateY(-75px) ;bottom: 50px; border:0; text-decoration:underline; color:#0f2b46; cursor:pointer; font-weight:700; }
 
 /* Modal */
 .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:grid; place-items:center; }
