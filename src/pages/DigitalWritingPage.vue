@@ -27,7 +27,7 @@ const captureAndBuildJson = async () => {
 
   try {
     const res = await axios.post(
-      'https://wave-api-monashie.azurewebsites.net/alphabet_mastery',
+      'https://wave-api-build1-amafbrdcacfzh5gf.australiasoutheast-01.azurewebsites.net/alphabet_mastery',
       payload
     )
     console.log('Server response:', res.data)
