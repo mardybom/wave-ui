@@ -5,10 +5,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '@/pages/HomePage.vue'
 import LetterSoundMappingPage from '@/pages/LetterSoundMappingPage.vue'
 import DigitalWritingPage from '@/pages/DigitalWritingPage.vue'
+import SentenceRearrangingPage from '@/pages/SentenceRearrangingPage.vue'
 
 
-const StartLearningPage = () => import('@/pages/StartLearningPage.vue') // 懒加载
-const ParentsHubPage   = () => import('@/pages/ParentsHubPage.vue')     // 懒加载
+const StartLearningPage = () => import('@/pages/StartLearningPage.vue')
+const ParentsHubPage   = () => import('@/pages/ParentsHubPage.vue')
 
 const routes = [
   { path: '/',          name: 'home',          component: HomePage },
@@ -16,6 +17,15 @@ const routes = [
   { path: '/parents',   name: 'parentsHub',    component: ParentsHubPage },
   { path: '/letter-sound',name: 'letterSoundMapping', component: LetterSoundMappingPage },
   { path: '/Digital-writing',name: 'DigitalWriting', component: DigitalWritingPage },
+  { path: '/sentence-rearranging', name: 'SentenceRearranging', component: SentenceRearrangingPage },
+  // iteration1
+  { 
+    path: '/iteration1',
+    name: 'iteration1',
+    beforeEnter() {
+      window.location.href = 'https://orange-water-0c6bfac00.2.azurestaticapps.net/'
+    }
+  },
 
   { path: '/:pathMatch(.*)*', redirect: '/' },
   
