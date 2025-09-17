@@ -70,33 +70,121 @@ const playAudio = () => {
   playNext()
 }
 
-/* ---------- clear + API ---------- */
+/* ---------- clear ---------- */
 const clearCanvas = () => {
   try { drawingPadRef.value?.clear?.() } catch {}
   isCorrect.value = null
   detectedCount.value = 0
 }
 
-const isChecking = ref(false)
-const captureAndBuildJson = async () => {
-  if (!drawingPadRef.value) return
-  const dataURL = drawingPadRef.value.getImage()
-  const payload = {
-    expected_letter: (displayed.value[0] || ''), // safe single-letter for backend
-    canvas_input: toPureBase64(dataURL),
-  }
+/* ---------- helpers for capture ---------- */
 
+// 1) Get the ink image as a dataURL.
+//    Prefer the component's getImage(); if missing, fall back to the inner <canvas>.
+const getInkDataURL = () => {
+  if (drawingPadRef.value && typeof drawingPadRef.value.getImage === 'function') {
+    return drawingPadRef.value.getImage()
+  }
+  const canvas = document.querySelector('.dw-pad canvas') || document.querySelector('canvas')
+  if (!canvas) throw new Error('Ink canvas not found')
+  return canvas.toDataURL('image/png')
+}
+
+// 2) Compose to a 300x300 PNG with a solid background (default white).
+const make300x300 = (dataURL, bg = '#ffffff', size = 300) =>
+  new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      const out = document.createElement('canvas')
+      out.width = size
+      out.height = size
+      const ctx = out.getContext('2d')
+
+      // background
+      ctx.fillStyle = bg
+      ctx.fillRect(0, 0, size, size)
+
+      // draw source (keep aspect, letter centered)
+      const sw = img.width, sh = img.height
+      const sAspect = sw / sh
+      let dw, dh, dx, dy
+      if (sAspect >= 1) {
+        dw = size; dh = Math.round(size / sAspect)
+        dx = 0; dy = Math.round((size - dh) / 2)
+      } else {
+        dh = size; dw = Math.round(size * sAspect)
+        dy = 0; dx = Math.round((size - dw) / 2)
+      }
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
+      ctx.drawImage(img, 0, 0, sw, sh, dx, dy, dw, dh)
+
+      resolve(out.toDataURL('image/png'))
+    }
+    img.onerror = reject
+    img.src = dataURL
+  })
+
+// 3) Download a dataURL as PNG (no extra button).
+const downloadPNG = async (dataURL, filename = 'capture.png') => {
+  try {
+    const blob = await (await fetch(dataURL)).blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename.endsWith('.png') ? filename : `${filename}.png`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.warn('Download failed (ignored):', e)
+  }
+}
+
+const isChecking = ref(false)
+
+/* ---------- capture + upload (with auto-download) ---------- */
+const captureAndBuildJson = async () => {
   try {
     isChecking.value = true
+
+    // 1) get raw ink (transparent BG)
+    const rawDataURL = getInkDataURL()
+
+    // 2) compose 300x300 with white BG
+    let dataURL
+    try {
+      dataURL = await make300x300(rawDataURL, '#ffffff', 300)
+    } catch (e) {
+      console.warn('Compositing failed, using raw image:', e)
+      dataURL = rawDataURL
+    }
+
+    // 3) auto-download locally
+    // const now = new Date()
+    // const pad2 = (n) => String(n).padStart(2, '0')
+    // const ts = `${now.getFullYear()}-${pad2(now.getMonth()+1)}-${pad2(now.getDate())}_${pad2(now.getHours())}-${pad2(now.getMinutes())}-${pad2(now.getSeconds())}`
+    // const fname = `DW_${(expectedLetter.value || 'unknown')}_${ts}.png`
+    // downloadPNG(dataURL, fname)
+
+    // 4) send to backend (same image)
+    const payload = {
+      expected_letter: displayed.value || '',
+      canvas_input: toPureBase64(dataURL),
+      is_capital: caseMode.value === 'upper' ? 'capital' : 'small',
+      level: level.value   // "easy" or "hard"
+    }
     const res = await axios.post(
       'https://wave-api-monashie.azurewebsites.net/alphabet_mastery',
       payload
     )
+
     isCorrect.value = res.data.is_correct
     detectedCount.value = res.data.detected_count
   } catch (err) {
-    console.error('API request failed:', err)
-    isCorrect.value = false
+    console.error('Capture failed:', err)
+    isCorrect.value = null
   } finally {
     isChecking.value = false
   }
@@ -219,16 +307,16 @@ const goNext = () => {
   position: absolute;
   top: var(--nav-h);
   left: 0; right: 0;
-  height: 200px;                /* adjust if you want a taller arc */
-  overflow: hidden;             /* <-- important (prevents overflow) */
+  height: 200px;
+  overflow: hidden;
   z-index: 0;
   pointer-events: none;
 }
 .wave{
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);  /* centers the wide SVG */
-  width: 100%;                   /* restore the width you had */
+  transform: translateX(-50%);
+  width: 100%;
   height: 50%;
 }
 :root {
