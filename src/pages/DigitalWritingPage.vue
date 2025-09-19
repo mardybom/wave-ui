@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, nextTick, onBeforeUnmount, onMounted } from 'vue'
 import axios from 'axios'
 import GameTopBar from '@/components/GameTopBar.vue'
 import DrawingPad from '@/components/DigitalWritingPage/DrawingPad.vue'
@@ -7,10 +7,58 @@ import UpperPart from '@/components/DigitalWritingPage/UpperPart.vue'
 
 import trueImg from '@/assets/hibby_success.png'
 import falseImg from '@/assets/hibby_feedback.png'
+import successVideoSrc from '@/assets/hibby_success.mp4'
 
 /* ---------- state ---------- */
 const expectedLetter = ref('')
-const onReveal = (ch) => { expectedLetter.value = ch }
+// kick the prompt cycle as soon as the first letter is revealed
+const onReveal = async (ch) => {
+  expectedLetter.value = ch
+  await nextTick()
+  startPromptCycle()
+}
+
+/* ---------- milestone (success video + in-modal toggles) ---------- */
+const showMilestone = ref(false)
+const successByLevel = reactive({ easy: 0, hard: 0 })  // counts per level
+
+// NEW: pulse “Keep Exploring” after level toggle in modal
+const nudgeExplore = ref(false)
+
+const hintExplore = async () => {
+  nudgeExplore.value = false      // reset so animation can restart
+  await nextTick()
+  nudgeExplore.value = true       // start pulsing (runs until clicked)
+}
+
+const openMilestone = () => {
+  stopPromptCycle()
+  showMilestone.value = true
+}
+
+const closeMilestone = async () => {
+  nudgeExplore.value = false      // stop pulsing when closing / clicked
+  showMilestone.value = false
+  clearCanvas()
+  await nextTick()
+  startPromptCycle()
+}
+
+onMounted(() => {
+  // Fallback: if for any reason `onReveal` races, start as soon as `displayed` is non-empty
+  const stop = watch(displayed, (val) => {
+    if (!val) return
+    startPromptCycle()
+    stop()
+  }, { immediate: true })
+
+  // Autoplay guard: first user gesture replays the prompt with sound
+  const unlockOnce = () => {
+    if (!childResponded.value) startPromptCycle()
+    window.removeEventListener('pointerdown', unlockOnce)
+  }
+  window.addEventListener('pointerdown', unlockOnce, { once: true })
+})
 
 const isCorrect = ref(null)
 const detectedCount = ref(0)
@@ -63,24 +111,64 @@ const playAudio = () => {
   const playNext = () => {
     if (i >= chars.length) return
     if (!audio) audio = new Audio()
+    try { audio.pause() } catch {}
+    audio.currentTime = 0
     audio.onended = () => { i += 1; playNext() }
     audio.src = `/audio/letters/${chars[i].toLowerCase()}.mp3`
-    audio.play().catch(() => {})
+    audio.play().catch(() => { /* autoplay may be blocked; ghost still shows */ })
   }
   playNext()
 }
+
+/* ---------- prompt cycle (sound + ghost(3s) + re-prompt every 10s) ---------- */
+let ghostHideTimer = null
+let idleTimer = null
+const hasWritten = ref(false)        // to highlight Capture
+const childResponded = ref(false)    // halts idle prompts when true
+
+const playPrompt = () => {
+  playAudio()
+  showGhost.value = true
+  if (ghostHideTimer) clearTimeout(ghostHideTimer)
+  ghostHideTimer = setTimeout(() => { showGhost.value = false }, 3000)
+}
+
+const scheduleIdlePrompt = () => {
+  if (idleTimer) clearTimeout(idleTimer)
+  idleTimer = setTimeout(() => {
+    if (!childResponded.value) {
+      playPrompt()
+      scheduleIdlePrompt()
+    }
+  }, 10000)
+}
+
+const startPromptCycle = () => {
+  stopPromptCycle()        // prevent overlaps
+  hasWritten.value = false
+  childResponded.value = false
+  playPrompt()
+  scheduleIdlePrompt()
+}
+
+const stopPromptCycle = () => {
+  if (idleTimer) { clearTimeout(idleTimer); idleTimer = null }
+  if (ghostHideTimer) { clearTimeout(ghostHideTimer); ghostHideTimer = null }
+}
+
+onBeforeUnmount(() => {
+  stopPromptCycle()
+})
 
 /* ---------- clear ---------- */
 const clearCanvas = () => {
   try { drawingPadRef.value?.clear?.() } catch {}
   isCorrect.value = null
   detectedCount.value = 0
+  hasWritten.value = false
 }
 
 /* ---------- helpers for capture ---------- */
-
-// 1) Get the ink image as a dataURL.
-//    Prefer the component's getImage(); if missing, fall back to the inner <canvas>.
 const getInkDataURL = () => {
   if (drawingPadRef.value && typeof drawingPadRef.value.getImage === 'function') {
     return drawingPadRef.value.getImage()
@@ -89,8 +177,6 @@ const getInkDataURL = () => {
   if (!canvas) throw new Error('Ink canvas not found')
   return canvas.toDataURL('image/png')
 }
-
-// 2) Compose to a 300x300 PNG with a solid background (default white).
 const make300x300 = (dataURL, bg = '#ffffff', size = 300) =>
   new Promise((resolve, reject) => {
     const img = new Image()
@@ -100,11 +186,9 @@ const make300x300 = (dataURL, bg = '#ffffff', size = 300) =>
       out.height = size
       const ctx = out.getContext('2d')
 
-      // background
       ctx.fillStyle = bg
       ctx.fillRect(0, 0, size, size)
 
-      // draw source (keep aspect, letter centered)
       const sw = img.width, sh = img.height
       const sAspect = sw / sh
       let dw, dh, dx, dy
@@ -125,63 +209,47 @@ const make300x300 = (dataURL, bg = '#ffffff', size = 300) =>
     img.src = dataURL
   })
 
-// 3) Download a dataURL as PNG (no extra button).
-const downloadPNG = async (dataURL, filename = 'capture.png') => {
-  try {
-    const blob = await (await fetch(dataURL)).blob()
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename.endsWith('.png') ? filename : `${filename}.png`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  } catch (e) {
-    console.warn('Download failed (ignored):', e)
-  }
-}
-
 const isChecking = ref(false)
 
-/* ---------- capture + upload (with auto-download) ---------- */
+/* ---------- capture + upload ---------- */
 const captureAndBuildJson = async () => {
   try {
     isChecking.value = true
-
-    // 1) get raw ink (transparent BG)
     const rawDataURL = getInkDataURL()
-
-    // 2) compose 300x300 with white BG
     let dataURL
-    try {
-      dataURL = await make300x300(rawDataURL, '#ffffff', 300)
-    } catch (e) {
-      console.warn('Compositing failed, using raw image:', e)
-      dataURL = rawDataURL
-    }
+    try { dataURL = await make300x300(rawDataURL, '#ffffff', 300) }
+    catch { dataURL = rawDataURL }
 
-    // 3) auto-download locally
-    // const now = new Date()
-    // const pad2 = (n) => String(n).padStart(2, '0')
-    // const ts = `${now.getFullYear()}-${pad2(now.getMonth()+1)}-${pad2(now.getDate())}_${pad2(now.getHours())}-${pad2(now.getMinutes())}-${pad2(now.getSeconds())}`
-    // const fname = `DW_${(expectedLetter.value || 'unknown')}_${ts}.png`
-    // downloadPNG(dataURL, fname)
-
-    // 4) send to backend (same image)
     const payload = {
-      expected_letter: displayed.value || '',
-      canvas_input: toPureBase64(dataURL),
+      expected_letter: (displayed.value || '').slice(0, level.value === 'hard' ? 2 : 1),
+      canvas_input: toPureBase64(dataURL).replace(/\s+/g, ''),
       is_capital: caseMode.value === 'upper' ? 'capital' : 'small',
-      level: level.value   // "easy" or "hard"
+      level: level.value
     }
+
     const res = await axios.post(
       'https://wave-api-monashie.azurewebsites.net/alphabet_mastery',
-      payload
+      payload,
+      { headers: { 'Content-Type': 'application/json' } }
     )
 
+    // update UI
     isCorrect.value = res.data.is_correct
     detectedCount.value = res.data.detected_count
+
+    // child responded; stop re-prompts until Next
+    childResponded.value = true
+    stopPromptCycle()
+
+    // ---------- milestone after 10 successes IN THIS LEVEL ----------
+    if (isCorrect.value) {
+      successByLevel[level.value] = (successByLevel[level.value] ?? 0) + 1
+      // reward on 10, 20, 30, ... for this level
+      if (successByLevel[level.value] % 2 === 0) {
+        isCorrect.value = null  // suppress small popup
+        openMilestone()
+      }
+    }
   } catch (err) {
     console.error('Capture failed:', err)
     isCorrect.value = null
@@ -190,35 +258,66 @@ const captureAndBuildJson = async () => {
   }
 }
 
-/* ---------- next ---------- */
-const goNext = () => {
+/* ---------- Next: clear, advance, and restart prompt cycle ---------- */
+const goNext = async () => {
+  clearCanvas()
+
   if (upperPartRef.value?.nextCard) {
     upperPartRef.value.nextCard()
-    return
+  } else {
+    const letters = 'abcdefghijklmnopqrstuvwxyz'.split('')
+    const currentIndex = letters.indexOf(expectedLetter.value.toLowerCase())
+    const idx = (currentIndex + 1) % letters.length
+    expectedLetter.value = letters[idx]
   }
-  const letters = 'abcdefghijklmnopqrstuvwxyz'.split('')
-  const currentIndex = letters.indexOf(expectedLetter.value.toLowerCase())
-  const idx = (currentIndex + 1) % letters.length
-  expectedLetter.value = letters[idx]
-  rebuildDisplayed()
-  playAudio()
+
+  await nextTick()
+  startPromptCycle()
 }
+
+/* ---------- When the child writes: highlight Capture + stop idle prompts ---------- */
+const onChildWrite = () => {
+  hasWritten.value = true
+  childResponded.value = true
+  stopPromptCycle()
+}
+
+/* ---------- Close small result modal (X or overlay) ---------- */
+const closeResultModal = async () => {
+  const wasCorrect = isCorrect.value === true
+  isCorrect.value = null
+  if (wasCorrect) {
+    await nextTick()
+    await goNext()           // clears + advances + restarts prompts
+  } else {
+    clearCanvas()            // clears but stays on same letter
+    await nextTick()
+    startPromptCycle()       // restart prompts on current letter
+  }
+}
+
+/* ---------- re-prompt when toggling Easy/Hard or Capital/Small ---------- */
+watch([caseMode, level], async () => {
+  await nextTick()
+  if (showMilestone.value) return   // don't prompt while video modal is open
+  startPromptCycle()
+})
 </script>
 
 <template>
   <GameTopBar />
   <div class="sky" aria-hidden="true">
-     <svg class="wave" viewBox="0 0 1440 220" preserveAspectRatio="none">
-        <path
-          d="M0,100 
-            C180,200 360,20 540,100 
-            C720,180 900,20 1080,100 
-            C1260,180 1440,30 1440,100 
-            L1440,0 L0,0 Z"
-          fill="#CFEFFF"/>
-      </svg>
+    <svg class="wave" viewBox="0 0 1440 220" preserveAspectRatio="none">
+      <path
+        d="M0,100 
+          C180,200 360,20 540,100 
+          C720,180 900,20 1080,100 
+          C1260,180 1440,30 1440,100 
+          L1440,0 L0,0 Z"
+        fill="#CFEFFF"/>
+    </svg>
+  </div>
 
-    </div>
   <div class="dw">
     <section class="dw-main">
       <!-- mascot -->
@@ -228,34 +327,35 @@ const goNext = () => {
 
       <!-- workspace -->
       <section class="dw-work">
-        <!-- title -->
         <header class="dw-head">
           <div class="head-row">
             <h1>Digital Writing</h1>
           </div>
           <p>Hear the sound, trace the letter, and get feedback!</p>
         </header>
+
         <!-- flip toggles -->
-            <div class="flip-stack">
-              <button
-                class="flip"
-                :data-side="caseMode"
-                @click="caseMode = caseMode === 'upper' ? 'lower' : 'upper'"
-                title="Capital / Small"
-              >
-                <span class="front">Capital letters</span>
-                <span class="back">Small letters</span>
-              </button>
-              <button
-                class="flip"
-                :data-side="level"
-                @click="level = level === 'easy' ? 'hard' : 'easy'"
-                title="Easy / Hard"
-              >
-                <span class="front">Easy</span>
-                <span class="back">Hard</span>
-              </button>
-            </div>
+        <div class="flip-stack">
+          <button
+            class="flip"
+            :data-side="caseMode"
+            @click="caseMode = caseMode === 'upper' ? 'lower' : 'upper'"
+            title="Capital / Small"
+          >
+            <span class="front">Capital letters</span>
+            <span class="back">Small letters</span>
+          </button>
+          <button
+            class="flip"
+            :data-side="level"
+            @click="level = level === 'easy' ? 'hard' : 'easy'"
+            title="Easy / Hard"
+          >
+            <span class="front">Easy</span>
+            <span class="back">Hard</span>
+          </button>
+        </div>
+
         <!-- hidden letter generator -->
         <UpperPart ref="upperPartRef" @reveal="onReveal" />
 
@@ -263,12 +363,11 @@ const goNext = () => {
         <div class="dw-canvasArea">
           <div class="dw-canvasWrap" :style="linedPaperStyle">
             <div v-if="showGhost && displayed" class="dw-ghost" :data-letter="displayed"></div>
-            <DrawingPad ref="drawingPadRef" class="dw-pad" />
+            <DrawingPad ref="drawingPadRef" class="dw-pad" @stroke="onChildWrite" />
           </div>
 
           <!-- controls -->
           <div class="dw-controls">
-            <!-- sound button -->
             <button
               class="dw-play"
               @click="playAudio"
@@ -277,10 +376,17 @@ const goNext = () => {
               title="Play sound"
             >🔊</button>
 
-            <!-- other buttons -->
             <button class="btn btn-ghost" :disabled="!displayed" @click="showGhost = !showGhost">💡 Show</button>
             <button class="btn btn-clear" @click="clearCanvas">🧽 Clear</button>
-            <button class="btn btn-cap" :disabled="isChecking || !displayed" @click="captureAndBuildJson">📸 Capture</button>
+
+            <button
+              class="btn btn-cap"
+              :class="{ highlight: hasWritten }"
+              :disabled="isChecking || !displayed"
+              @click="captureAndBuildJson"
+            >
+              📸 Capture
+            </button>
 
             <button class="next-link" :disabled="isChecking" @click="goNext">
               <span>Next</span> <span class="chev">▸</span>
@@ -290,13 +396,66 @@ const goNext = () => {
       </section>
     </section>
 
-    <!-- result modal -->
-    <div v-if="isCorrect !== null" class="modal-overlay" @click="isCorrect = null" aria-hidden="false">
+    <!-- small result modal (success/fail) -->
+    <div v-if="isCorrect !== null" class="modal-overlay" @click="closeResultModal" aria-hidden="false">
       <div class="hibby-popup" :data-state="isCorrect ? 'ok' : 'nope'" role="dialog" aria-modal="true" @click.stop>
-        <button class="close-x" @click="isCorrect = null" aria-label="Close">✕</button>
+        <button class="close-x" @click="closeResultModal" aria-label="Close">✕</button>
         <img v-if="isCorrect" :src="trueImg" alt="Correct" />
         <img v-else :src="falseImg" alt="Incorrect" />
         <p>{{ isCorrect ? '🌟 Great job!' : '🔁 Try again' }}</p>
+      </div>
+    </div>
+
+    <!-- milestone modal (video + toggles) -->
+    <div v-if="showMilestone" class="modal-overlay" @click="closeMilestone" aria-hidden="false">
+      <div class="milestone-modal" role="dialog" aria-modal="true" @click.stop>
+        <button class="close-x" @click="closeMilestone" aria-label="Close">✕</button>
+
+        <div class="video-wrap">
+          <!-- ✅ no controls; plays inline, loops; keeps your existing layout -->
+          <video
+            :src="successVideoSrc"
+            autoplay
+            muted
+            playsinline
+            loop
+            preload="auto"
+            style="width:80%; height:auto; border-radius:12px; display:block;"
+          ></video>
+        </div>
+        <h3 class="milestone-title">Great job! 🎉</h3>
+        <p class="milestone-hint">Click on the cards to try the next level.</p>
+        <div class="milestone-controls">
+          <div class="flip-stack in-modal">
+            <button
+              class="flip"
+              :data-side="caseMode"
+              @click="caseMode = caseMode === 'upper' ? 'lower' : 'upper'"
+              title="Capital / Small"
+            >
+              <span class="front">Capital letters</span>
+              <span class="back">Small letters</span>
+            </button>
+
+            <button
+              class="flip"
+              :data-side="level"
+              @click="level = level === 'easy' ? 'hard' : 'easy'; hintExplore()"
+              title="Easy / Hard"
+            >
+              <span class="front">Easy</span>
+              <span class="back">Hard</span>
+            </button>
+          </div>
+
+          <button
+            class="btn btn-primary"
+            :class="{ pulse: nudgeExplore }"
+            @click="closeMilestone"
+          >
+            Keep Exploring
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -421,7 +580,7 @@ const goNext = () => {
 .next-link:disabled { opacity: .5; cursor: default; }
 .next-link .chev { transform: translateY(1px); }
 
-/* modal */
+/* modal (small result) */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -462,6 +621,34 @@ const goNext = () => {
   to   { opacity: 1; transform: scale(1); }
 }
 
+/* milestone modal */
+.milestone-modal {
+  position: relative;
+  max-width: 720px;
+  width: calc(100% - 32px);
+  background: #fff;
+  border: 2px solid #ddd;
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.25);
+  text-align: center;
+  padding: 18px 18px 22px;
+  animation: popIn .22s ease;
+}
+.video-wrap { width: 60%; margin: 4px 160px 16px; }
+.milestone-controls { display: grid; gap: 12px; justify-items: center; }
+.flip-stack.in-modal .flip { width: 170px; height: 80px; }
+.btn-primary {
+  background: #FD9B2D;
+  font-size: 20px;
+  width: 180px; height: 80px;
+  color: #0f2b46;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-weight: 800;
+  box-shadow: var(--shadow);
+}
+.btn-primary:hover { filter: brightness(0.98); }
+
 /* flip buttons (under sound button) */
 .flip-stack { display:flex; flex-direction:row; gap:10px; margin:8px 0 4px; }
 .flip {
@@ -497,5 +684,42 @@ const goNext = () => {
   .dw-mascot img { width: 300px; transform: none; justify-self: center; }
   .dw-canvasArea { grid-template-columns: 1fr; margin-left: 0; }
   .dw-controls { flex-direction: row; justify-content: center; }
+}
+
+/* capture highlight */
+.highlight {
+  animation: pulse 1s infinite;
+  border: 2px solid #ff4081;
+  box-shadow: 0 0 12px #ff80ab;
+}
+@keyframes pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.milestone-title { 
+  font-weight: 800; 
+  font-size: 48px; 
+  margin: 6px 0 2px; 
+  letter-spacing: .02em; 
+  color: var(--navy); 
+}
+.milestone-hint { 
+  margin: 0 0 12px; 
+  font-size: 36px;
+  opacity: .9; 
+  font-size: 16px; 
+}
+
+/* NEW: pulse animation for Keep Exploring button after level toggle */
+.pulse { 
+  animation: pulseScale .8s ease-in-out infinite; 
+  will-change: transform; 
+}
+@keyframes pulseScale {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
 }
 </style>
