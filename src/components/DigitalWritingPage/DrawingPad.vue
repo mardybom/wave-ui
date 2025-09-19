@@ -5,89 +5,83 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
+const emit = defineEmits(['stroke'])
+
 const canvas = ref(null)
 let ctx, drawing = false, lastX = 0, lastY = 0
+let hasEmittedSinceClear = false
 
-// Resize the canvas to match its CSS size * devicePixelRatio,
-// and scale the context so we can draw using CSS pixel units.
 const resizeCanvas = () => {
   const dpr = Math.max(1, window.devicePixelRatio || 1)
   const rect = canvas.value.getBoundingClientRect()
+  const w = Math.max(1, Math.floor(rect.width * dpr))
+  const h = Math.max(1, Math.floor(rect.height * dpr))
+  canvas.value.width = w
+  canvas.value.height = h
 
-  // Only resize if needed to avoid clearing on every call
-  const displayWidth  = Math.round(rect.width  * dpr)
-  const displayHeight = Math.round(rect.height * dpr)
-
-  if (canvas.value.width !== displayWidth || canvas.value.height !== displayHeight) {
-    canvas.value.width  = displayWidth
-    canvas.value.height = displayHeight
-
-    ctx = canvas.value.getContext('2d')
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0) // now 1 unit == 1 CSS pixel
-    initStyle()
-    whiteBg()
-  }
-}
-
-const initStyle = () => {
-  ctx.lineWidth = 4
+  ctx = canvas.value.getContext('2d', { willReadFrequently: true })
+  ctx.scale(dpr, dpr)
+  ctx.lineJoin = 'round'
   ctx.lineCap = 'round'
-  ctx.strokeStyle = '#111'
+  ctx.lineWidth = 12
+  ctx.strokeStyle = '#222'
 }
 
-const whiteBg = () => {
-  if (!ctx || !canvas.value) return
-  ctx.clearRect(0, 0, canvas.value.width, canvas.value.height)
+const start = (x, y) => {
+  drawing = true
+  lastX = x; lastY = y
 }
 
-const getPos = (e) => {
-  const rect = canvas.value.getBoundingClientRect()
-  const t = e.touches?.[0]
-  return {
-    x: (t ? t.clientX : e.clientX) - rect.left,
-    y: (t ? t.clientY : e.clientY) - rect.top
-  }
-}
-
-const start = (e) => { const p = getPos(e); drawing = true; lastX = p.x; lastY = p.y }
-const move  = (e) => {
+const draw = (x, y) => {
   if (!drawing) return
-  const p = getPos(e)
   ctx.beginPath()
   ctx.moveTo(lastX, lastY)
-  ctx.lineTo(p.x, p.y)
+  ctx.lineTo(x, y)
   ctx.stroke()
-  lastX = p.x; lastY = p.y
+  lastX = x; lastY = y
+
+  if (!hasEmittedSinceClear) { emit('stroke'); hasEmittedSinceClear = true }
 }
+
 const end = () => { drawing = false }
 
-const clear = () => { ctx.clearRect(0, 0, canvas.value.width, canvas.value.height) }
+const getXY = (e) => {
+  const r = canvas.value.getBoundingClientRect()
+  if (e.touches && e.touches[0]) {
+    const t = e.touches[0]
+    return [t.clientX - r.left, t.clientY - r.top]
+  }
+  return [e.clientX - r.left, e.clientY - r.top]
+}
+
 const getImage = () => canvas.value.toDataURL('image/png')
 
-let ro // ResizeObserver
-onMounted(() => {
-  ctx = canvas.value.getContext('2d')
-  resizeCanvas() // initial
+const clear = () => {
+  const { width, height } = canvas.value
+  ctx.save()
+  ctx.setTransform(1,0,0,1,0,0)
+  ctx.clearRect(0, 0, width, height)
+  ctx.restore()
+  hasEmittedSinceClear = false
+}
 
-  // Keep it crisp on resizes / layout changes
-  ro = new ResizeObserver(resizeCanvas)
-  ro.observe(canvas.value)
+onMounted(() => {
+  resizeCanvas()
   window.addEventListener('resize', resizeCanvas)
 
-  canvas.value.addEventListener('mousedown', start)
-  canvas.value.addEventListener('mousemove', move)
+  // mouse
+  canvas.value.addEventListener('mousedown', (e) => start(...getXY(e)))
+  canvas.value.addEventListener('mousemove', (e) => draw(...getXY(e)))
   window.addEventListener('mouseup', end)
-  canvas.value.addEventListener('touchstart', (e)=>{ e.preventDefault(); start(e) }, { passive:false })
-  canvas.value.addEventListener('touchmove',  (e)=>{ e.preventDefault(); move(e)  }, { passive:false })
+
+  // touch
+  canvas.value.addEventListener('touchstart', (e) => { e.preventDefault(); start(...getXY(e)) }, { passive: false })
+  canvas.value.addEventListener('touchmove',  (e) => { e.preventDefault(); draw(...getXY(e)) },  { passive: false })
   window.addEventListener('touchend', end)
 })
 
 onBeforeUnmount(() => {
-  if (!canvas.value) return
-  ro?.disconnect()
   window.removeEventListener('resize', resizeCanvas)
-  canvas.value.removeEventListener('mousedown', start)
-  canvas.value.removeEventListener('mousemove', move)
   window.removeEventListener('mouseup', end)
   window.removeEventListener('touchend', end)
 })
@@ -96,10 +90,5 @@ defineExpose({ getImage, clear })
 </script>
 
 <style scoped>
-.pad {
-  width: 80%;
-  height: 80%;
-  display: block;
-  touch-action: none; /* prevents panning/zooming from interfering with drawing */
-}
+.pad { width: 100%; height: 100%; display: block; touch-action: none; }
 </style>

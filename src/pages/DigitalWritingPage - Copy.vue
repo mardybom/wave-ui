@@ -19,6 +19,7 @@ const drawingPadRef = ref(null)
 const toPureBase64 = (dataURL) => dataURL.split(',')[1] ?? dataURL
 const captureAndBuildJson = async () => {
   const dataURL = drawingPadRef.value.getImage()
+  downloadPNG(dataURL, "test")
   const payload = {
     expected_letter: expectedLetter.value,
     canvas_input: toPureBase64(dataURL),
