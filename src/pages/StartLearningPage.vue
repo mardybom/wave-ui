@@ -48,7 +48,7 @@ const scrollCards = (dir) => {
             <ButtonCard label="Letter sound mapping" to="/letter-sound" />
             <ButtonCard label="Digital Writing" to="/Digital-writing"/>
             <ButtonCard label="Sentence Rearranging" to="/sentence-rearranging" />
-            <ButtonCard label="coming soon" />
+            <ButtonCard label="Picture Word Matching" to="/image-labelling" />
             <ButtonCard label="coming soon" />
             <ButtonCard label="coming soon" />
           </div>

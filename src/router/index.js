@@ -6,6 +6,8 @@ import HomePage from '@/pages/HomePage.vue'
 import LetterSoundMappingPage from '@/pages/LetterSoundMappingPage.vue'
 import DigitalWritingPage from '@/pages/DigitalWritingPage.vue'
 import SentenceRearrangingPage from '@/pages/SentenceRearrangingPage.vue'
+import ImageLabellingPage from '@/pages/ImageLabellingPage.vue'
+
 
 
 const StartLearningPage = () => import('@/pages/StartLearningPage.vue')
@@ -18,6 +20,7 @@ const routes = [
   { path: '/letter-sound',name: 'letterSoundMapping', component: LetterSoundMappingPage },
   { path: '/Digital-writing',name: 'DigitalWriting', component: DigitalWritingPage },
   { path: '/sentence-rearranging', name: 'SentenceRearranging', component: SentenceRearrangingPage },
+  { path: '/image-labelling', name: 'ImageLabelling', component: ImageLabellingPage },
   // iteration1
   { 
     path: '/iteration1',
