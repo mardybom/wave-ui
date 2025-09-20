@@ -47,8 +47,8 @@ const scrollCards = (dir) => {
           <div class="cards-track" ref="cardsTrack">
             <ButtonCard label="Letter sound mapping" to="/letter-sound" />
             <ButtonCard label="Digital Writing" to="/Digital-writing"/>
-            <ButtonCard label="coming soon" />
-            <ButtonCard label="coming soon" />
+            <ButtonCard label="Sentence Rearranging" to="/sentence-rearranging" />
+            <ButtonCard label="Picture Word Matching" to="/image-labelling" />
             <ButtonCard label="coming soon" />
             <ButtonCard label="coming soon" />
           </div>
