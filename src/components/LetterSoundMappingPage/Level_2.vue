@@ -1,31 +1,32 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import GameTopBar from '@/components/GameTopBar.vue'
 import ProgressTracker from '@/components/LetterSoundMappingPage/ProgressTracker.vue'
 import LetterCard_level2 from '@/components/LetterSoundMappingPage/letterCard_level2.vue'
 
 const emit = defineEmits(['request-prev-level','request-start-learning'])
 
+/* -------------------- data -------------------- */
 const letters = 'abcdefghijklmnopqrstuvwxyz'.split('')
 const currentIndex = ref(0)
 const target = computed(() => letters[currentIndex.value])
 
-// five-card round (JS only)
-const cards = ref([])
-const selectedTargetIdxs = ref(new Set())
-const targetCount = ref(0)
+// 4-card round
+const cards = ref([])                     // e.g. ['u','a','f','a']
+const selectedTargetIdxs = ref(new Set()) // indexes of correct cards the child clicked
+const targetCount = ref(0)                // how many correct cards exist in this round
 const lastWrong = ref(null)
 
 // ui
 const isPlaying = ref(false)
 const showWin = ref(false)
 
-// NEW: congrats modal logic
+// congrats modal
 const showCongrats = ref(false)
 const hasShownCongrats = ref(false)
 function closeCongrats () { showCongrats.value = false }
 
-// audio
+/* -------------------- audio -------------------- */
 let audio = null
 function playSound () {
   try {
@@ -38,12 +39,15 @@ function playSound () {
   } catch { isPlaying.value = false }
 }
 
-// round
+/* -------------------- round -------------------- */
 function makeRound () {
   selectedTargetIdxs.value = new Set()
   lastWrong.value = null
-  const correct = Math.floor(Math.random() * 3) + 1
+
+  const correct = Math.floor(Math.random() * 3) + 1   // 1..3 correct
   targetCount.value = correct
+
+  // pool = [correct * target] + random distractors, then shuffle
   const pool = Array.from({ length: correct }, () => target.value)
   while (pool.length < 4) {
     const r = letters[Math.floor(Math.random() * letters.length)]
@@ -51,19 +55,29 @@ function makeRound () {
   }
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
-    const tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp
+    ;[pool[i], pool[j]] = [pool[j], pool[i]]
   }
   cards.value = pool
+
+  /* wait for DOM, then (re)start cues */
+  nextTick(() => {
+    restartGuidance()
+  })
 }
 
 function onCard (i) {
   const chosen = cards.value[i]
   lastWrong.value = null
+
+  // reset hint timer to give another 7s after any interaction
+  scheduleHint(true)
+
   if (chosen === target.value) {
     if (!selectedTargetIdxs.value.has(i)) selectedTargetIdxs.value.add(i)
+
     if (selectedTargetIdxs.value.size === targetCount.value) {
       showWin.value = true
-      // NEW: if this was the last letter, show the congrats modal once
+      stopHint()
       if (currentIndex.value === letters.length - 1 && !hasShownCongrats.value) {
         showCongrats.value = true
         hasShownCongrats.value = true
@@ -79,19 +93,108 @@ function next () {
   currentIndex.value = currentIndex.value < letters.length - 1 ? currentIndex.value + 1 : 0
   showWin.value = false
   makeRound()
-  playSound()
+  nextTick(playSound)
 }
 function prev () {
   if (currentIndex.value > 0) {
     currentIndex.value--
     showWin.value = false
     makeRound()
-    playSound()
+    nextTick(playSound)
   }
 }
 
-onMounted(makeRound)
-watch(currentIndex, makeRound)
+/* -------------------- AUTOPLAY ON FIRST LOAD -------------------- */
+onMounted(async () => {
+  makeRound()
+  await nextTick()
+  playSound()
+})
+watch(currentIndex, () => { /* makeRound is called in next/prev */ })
+
+/* -------------------- SEQUENTIAL CARD PULSE -------------------- */
+const CARD_SELECTOR = '.cards .card-wrap'
+const getCards = () => Array.from(document.querySelectorAll(CARD_SELECTOR))
+
+let pulseTimer = null
+let pulseIndex = 0
+const PULSE_MS = 1200
+
+function clearPulseClasses () {
+  for (const el of getCards()) el.classList.remove('l2-nudge')
+}
+function tickPulse () {
+  const els = getCards()
+  if (!els.length) {
+    pulseTimer = setTimeout(tickPulse, 120)
+    return
+  }
+  clearPulseClasses()
+  const idx = pulseIndex % els.length
+  els[idx]?.classList.add('l2-nudge')
+  pulseIndex++
+  pulseTimer = setTimeout(tickPulse, PULSE_MS)
+}
+function startPulse () {
+  stopPulse()
+  pulseIndex = 0
+  tickPulse()
+}
+function stopPulse () {
+  clearTimeout(pulseTimer)
+  clearPulseClasses()
+}
+
+/* -------------------- REPEATING HINT LOOP -------------------- */
+let hintTimer = null
+let hintClearTimer = null
+const HINT_INTERVAL_MS = 7000
+const HINT_FLASH_MS = 1100
+
+function flashHintOnce () {
+  const els = getCards()
+  if (!els.length) {
+    hintClearTimer = setTimeout(flashHintOnce, 120)
+    return
+  }
+  els.forEach((el, i) => {
+    const isCorrect = cards.value[i] === target.value
+    el.classList.toggle('l2-hint', isCorrect)
+  })
+  clearTimeout(hintClearTimer)
+  hintClearTimer = setTimeout(() => {
+    for (const el of els) el.classList.remove('l2-hint')
+  }, HINT_FLASH_MS)
+}
+
+function stopHint () {
+  clearTimeout(hintTimer)
+  clearTimeout(hintClearTimer)
+  for (const el of getCards()) el.classList.remove('l2-hint')
+}
+function scheduleHint (restart = false) {
+  if (restart) clearTimeout(hintTimer)
+  if (selectedTargetIdxs.value.size === targetCount.value) return
+  hintTimer = setTimeout(() => {
+    if (selectedTargetIdxs.value.size !== targetCount.value) {
+      flashHintOnce()
+      scheduleHint(true)
+    }
+  }, HINT_INTERVAL_MS)
+}
+
+/* restart both guidance loops for each new board */
+function restartGuidance () {
+  startPulse()
+  scheduleHint(true)
+}
+
+/* -------------------- cleanup -------------------- */
+onBeforeUnmount(() => {
+  try { audio?.pause() } catch {}
+  stopPulse()
+  stopHint()
+})
 </script>
 
 <template>
@@ -167,26 +270,18 @@ watch(currentIndex, makeRound)
 
     <!-- Congrats Modal -->
     <div v-if="showCongrats" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-        <div class="modal-card">
-            <!-- Animation video -->
-            <video 
-            autoplay 
-            loop 
-            muted 
-            playsinline 
-            class="congrats-video"
-            >
-            <source src="@/assets/elle_success.mp4" type="video/mp4" />
+      <div class="modal-card">
+        <video autoplay loop muted playsinline class="congrats-video">
+          <source src="@/assets/elle_success.mp4" type="video/mp4" />
+        </video>
 
-            </video>
-
-            <h2 id="modal-title">Great job! 🎉</h2>
-            <p>Now go to level 2.</p>
-            <div class="modal-actions">
-            <button class="btn secondary" @click="closeCongrats">Keep exploring</button>
-            <button class="btn primary" @click="emit('request-start-learning')">Go to next game</button>
-            </div>
+        <h2 id="modal-title">Great job! 🎉</h2>
+        <p>Now go to level 2.</p>
+        <div class="modal-actions">
+          <button class="btn secondary" @click="closeCongrats">Keep exploring</button>
+          <button class="btn primary" @click="emit('request-start-learning')">Go to next game</button>
         </div>
+      </div>
     </div>
   </div>
 </template>
@@ -303,25 +398,34 @@ watch(currentIndex, makeRound)
 .sound:hover { transform: scale(1.05); box-shadow:0 10px 26px rgba(0,0,0,.16); }
 .sound:disabled{ opacity:.6; cursor: default; }
 
-/* Cards: single row of five with clear gaps */
+/* Cards */
 .cards{
   width: 120%;
   margin-left: 10%;
   display:grid;
   grid-template-columns: repeat(5, minmax(80px, 1fr));
-  gap: 24px;                 /* ← requested gap */
+  gap: 24px;
   align-items:stretch;
 }
 
 /* Clickable wrapper */
 .card-wrap{
   cursor:pointer;
-  border-radius:5px;
+  border-radius:16px;                /* keep same visual radius */
+  position: relative;                /* for ::after on inner card */
   transition: transform .08s ease, box-shadow .2s ease;
+  transform-origin: center;
 }
 .card-wrap:hover{ transform: translateY(-1px); }
 .card-wrap.selected{ box-shadow:0 0 10px 20px rgba(58,195,122,.6); }
 .card-wrap.wrong{ animation:shake .3s linear; }
+
+/* The actual visible card inside LetterCard_level2 should be the anchor for rings */
+.card-wrap :deep(.letter-card){
+  position: relative;
+  border-radius: 16px;               /* match its real radius */
+  --card-border: 1px;                /* set to the real border width of .letter-card */
+}
 
 /* Hide any internal sound icon in LetterCard for this level */
 .card-wrap :deep(.sound-btn),
@@ -338,7 +442,7 @@ watch(currentIndex, makeRound)
   color:#0f2b46;
 }
 
-/* Right rail — clearly separate it from cards */
+/* Right rail */
 .right-rail{
   display:flex;
   flex-direction:column;
@@ -354,7 +458,7 @@ watch(currentIndex, makeRound)
   border-radius:10px;
 }
 
-/* ---------- Controls (fixed inside viewport) ---------- */
+/* Controls */
 .controls{
   position: absolute;
   left: 50%;
@@ -386,7 +490,7 @@ watch(currentIndex, makeRound)
   40%,60%{ transform:translateX(8px) }
 }
 
-/* Responsive squeezes rather than wrapping so we keep one row of 5 */
+/* Responsive */
 @media (max-width: 1200px){
   .board{ grid-template-columns: 320px 1fr 180px; }
   .cards{ grid-template-columns: repeat(5, minmax(150px, 1fr)); gap:20px; }
@@ -399,4 +503,37 @@ watch(currentIndex, makeRound)
   .sound{ width:104px; height:104px; font-size:42px; }
   .mascot{ width: 260px; }
 }
+
+/* ---------- Sequential nudge + hint (fixed) ---------- */
+
+/* Pulse only scales the wrapper */
+@keyframes l2Pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+.l2-nudge { animation: l2Pulse 1.2s ease-in-out infinite; }
+
+@keyframes l2Glow{
+  0%,100%{ opacity:.25; }
+  50%    { opacity:1; }
+}
+
+/* Hint ring: outside the card by 8px, compensating for the card border */
+.l2-hint { /* class remains for JS toggling */ }
+.card-wrap.l2-hint :deep(.letter-card)::after{
+  content:"";
+  position:absolute;
+  /* -8px visual offset minus the card’s own border */
+  inset: calc(-3px - var(--card-border, 1px));
+  border-radius:inherit;
+  pointer-events:none;
+  box-shadow:0 0 0 10px #FD9B2D;     /* 10px “outline” look */
+}
+
+/* accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .l2-nudge { animation: none !important; }
+  .card-wrap.l2-nudge :deep(.letter-card)::after { animation: none !important; opacity: .6; }
+}
 </style>
+
+
+
+
