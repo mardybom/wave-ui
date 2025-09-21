@@ -195,6 +195,8 @@ onBeforeUnmount(() => {
   stopPulse()
   stopHint()
 })
+const isRoundComplete = computed(() => selectedTargetIdxs.value.size === targetCount.value)
+
 </script>
 
 <template>
@@ -263,7 +265,14 @@ onBeforeUnmount(() => {
       <!-- Controls (always visible) -->
       <div class="controls">
         <button class="btn" @click="prev" :disabled="currentIndex === 0">Prev</button>
-        <button class="btn primary" @click="next" :disabled="selectedTargetIdxs.size !== targetCount">Next</button>
+        <button
+          class="btn primary"
+          @click="next"
+          :disabled="!isRoundComplete"
+          :class="{ pulse: isRoundComplete }"
+        >
+          Next
+        </button>
       </div>
       <div><button class="link" @click="emit('request-prev-level')"> ↩ Back to Level 1</button></div>
     </main>
@@ -276,7 +285,6 @@ onBeforeUnmount(() => {
         </video>
 
         <h2 id="modal-title">Great job! 🎉</h2>
-        <p>Now go to level 2.</p>
         <div class="modal-actions">
           <button class="btn secondary" @click="closeCongrats">Keep exploring</button>
           <button class="btn primary" @click="emit('request-start-learning')">Go to next game</button>
@@ -531,6 +539,24 @@ onBeforeUnmount(() => {
 @media (prefers-reduced-motion: reduce) {
   .l2-nudge { animation: none !important; }
   .card-wrap.l2-nudge :deep(.letter-card)::after { animation: none !important; opacity: .6; }
+}
+
+/* --- Next button: scale only  --- */
+@keyframes nextBtnPulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.1); }  /* tweak to taste: 1.06–1.12 */
+  100% { transform: scale(1); }
+}
+
+.btn.primary.pulse {
+  animation: nextBtnPulse 0.9s ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .btn.primary.pulse { animation: none !important; }
 }
 </style>
 
