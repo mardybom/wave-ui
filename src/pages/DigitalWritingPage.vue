@@ -26,9 +26,9 @@ const successByLevel = reactive({ easy: 0, hard: 0 })  // counts per level
 const nudgeExplore = ref(false)
 
 const hintExplore = async () => {
-  nudgeExplore.value = false      // reset so animation can restart
+  nudgeExplore.value = false
   await nextTick()
-  nudgeExplore.value = true       // start pulsing (runs until clicked)
+  nudgeExplore.value = true
 }
 
 const openMilestone = () => {
@@ -37,7 +37,7 @@ const openMilestone = () => {
 }
 
 const closeMilestone = async () => {
-  nudgeExplore.value = false      // stop pulsing when closing / clicked
+  nudgeExplore.value = false
   showMilestone.value = false
   clearCanvas()
   await nextTick()
@@ -58,6 +58,10 @@ onMounted(() => {
     window.removeEventListener('pointerdown', unlockOnce)
   }
   window.addEventListener('pointerdown', unlockOnce, { once: true })
+
+  // global listeners to close dropdowns
+  window.addEventListener('pointerdown', onGlobalPointer)
+  window.addEventListener('keydown', onGlobalKey)
 })
 
 const isCorrect = ref(null)
@@ -68,10 +72,43 @@ const upperPartRef = ref(null)
 
 const toPureBase64 = (dataURL) => dataURL.split(',')[1] ?? dataURL
 
-/* ---------- flip cards (case + level) ---------- */
+/* ---------- dropdowns (replace flip cards) ---------- */
 const caseMode = ref('upper')   // 'upper' | 'lower'
 const level    = ref('easy')    // 'easy'  | 'hard'
 
+const caseOptions = [
+  { value: 'upper', label: 'Capital', example: 'A', help: 'BIG letters like A' },
+  { value: 'lower', label: 'Small',   example: 'a', help: 'little letters like a' }
+]
+const levelOptions = [
+  { value: 'easy', label: 'One letter', example: '🐣', help: 'Trace 1 letter' },
+  { value: 'hard', label: 'Two letters', example: '🔥', help: 'Trace 2 letters' }
+]
+
+// open state (main)
+const isCaseOpen  = ref(false)
+const isLevelOpen = ref(false)
+// open state (modal)
+const isCaseOpenModal  = ref(false)
+const isLevelOpenModal = ref(false)
+
+const currentCaseLabel  = computed(() =>
+  caseOptions.find(o => o.value === caseMode.value)?.label || ''
+)
+const currentLevelLabel = computed(() =>
+  levelOptions.find(o => o.value === level.value)?.label || ''
+)
+
+const closeAllMenus = () => {
+  isCaseOpen.value = false
+  isLevelOpen.value = false
+  isCaseOpenModal.value = false
+  isLevelOpenModal.value = false
+}
+const onGlobalPointer = (e) => { if (!e.target?.closest?.('.dropdown')) closeAllMenus() }
+const onGlobalKey = (e) => { if (e.key === 'Escape') closeAllMenus() }
+
+/* ---------- displayed (A/a or 2 letters in hard mode) ---------- */
 const displayed = ref('')
 const rebuildDisplayed = () => {
   if (!expectedLetter.value) { displayed.value = ''; return }
@@ -144,7 +181,7 @@ const scheduleIdlePrompt = () => {
 }
 
 const startPromptCycle = () => {
-  stopPromptCycle()        // prevent overlaps
+  stopPromptCycle()
   hasWritten.value = false
   childResponded.value = false
   playPrompt()
@@ -158,6 +195,8 @@ const stopPromptCycle = () => {
 
 onBeforeUnmount(() => {
   stopPromptCycle()
+  window.removeEventListener('pointerdown', onGlobalPointer)
+  window.removeEventListener('keydown', onGlobalKey)
 })
 
 /* ---------- clear ---------- */
@@ -233,20 +272,15 @@ const captureAndBuildJson = async () => {
       { headers: { 'Content-Type': 'application/json' } }
     )
 
-    // update UI
     isCorrect.value = res.data.is_correct
     detectedCount.value = res.data.detected_count
-
-    // child responded; stop re-prompts until Next
     childResponded.value = true
     stopPromptCycle()
 
-    // ---------- milestone after 10 successes IN THIS LEVEL ----------
     if (isCorrect.value) {
       successByLevel[level.value] = (successByLevel[level.value] ?? 0) + 1
-      // reward on 10, 20, 30, ... for this level
-      if (successByLevel[level.value] % 2 === 0) {
-        isCorrect.value = null  // suppress small popup
+      if (successByLevel[level.value] % 5 === 0) {
+        isCorrect.value = null
         openMilestone()
       }
     }
@@ -258,7 +292,7 @@ const captureAndBuildJson = async () => {
   }
 }
 
-/* ---------- Next: clear, advance, and restart prompt cycle ---------- */
+/* ---------- Next ---------- */
 const goNext = async () => {
   clearCanvas()
 
@@ -275,31 +309,31 @@ const goNext = async () => {
   startPromptCycle()
 }
 
-/* ---------- When the child writes: highlight Capture + stop idle prompts ---------- */
+/* ---------- child writing ---------- */
 const onChildWrite = () => {
   hasWritten.value = true
   childResponded.value = true
   stopPromptCycle()
 }
 
-/* ---------- Close small result modal (X or overlay) ---------- */
+/* ---------- Close small result modal ---------- */
 const closeResultModal = async () => {
   const wasCorrect = isCorrect.value === true
   isCorrect.value = null
   if (wasCorrect) {
     await nextTick()
-    await goNext()           // clears + advances + restarts prompts
+    await goNext()
   } else {
-    clearCanvas()            // clears but stays on same letter
+    clearCanvas()
     await nextTick()
-    startPromptCycle()       // restart prompts on current letter
+    startPromptCycle()
   }
 }
 
-/* ---------- re-prompt when toggling Easy/Hard or Capital/Small ---------- */
+/* ---------- re-prompt when toggling ---------- */
 watch([caseMode, level], async () => {
   await nextTick()
-  if (showMilestone.value) return   // don't prompt while video modal is open
+  if (showMilestone.value) return
   startPromptCycle()
 })
 </script>
@@ -334,26 +368,69 @@ watch([caseMode, level], async () => {
           <p>Hear the sound, trace the letter, and get feedback!</p>
         </header>
 
-        <!-- flip toggles -->
+        <!-- DROPDOWNS -->
         <div class="flip-stack">
-          <button
-            class="flip"
-            :data-side="caseMode"
-            @click="caseMode = caseMode === 'upper' ? 'lower' : 'upper'"
-            title="Capital / Small"
-          >
-            <span class="front">Capital letters</span>
-            <span class="back">Small letters</span>
-          </button>
-          <button
-            class="flip"
-            :data-side="level"
-            @click="level = level === 'easy' ? 'hard' : 'easy'"
-            title="Easy / Hard"
-          >
-            <span class="front">Easy</span>
-            <span class="back">Hard</span>
-          </button>
+          <!-- Case -->
+          <div class="dropdown case" :data-open="isCaseOpen">
+            <button
+              class="dropdown-trigger"
+              @click="isCaseOpen = !isCaseOpen; isLevelOpen = false"
+              aria-haspopup="listbox"
+              :aria-expanded="isCaseOpen"
+              title="Change case"
+            >
+              <span class="prefix">Case:</span>
+              <span class="value">{{ currentCaseLabel }}</span>
+              <span class="caret">▾</span>
+            </button>
+
+            <ul v-if="isCaseOpen" class="dropdown-menu" role="listbox">
+              <li
+                v-for="opt in caseOptions"
+                :key="opt.value"
+                class="dropdown-option"
+                role="option"
+                :aria-selected="caseMode === opt.value"
+                @click="caseMode = opt.value; isCaseOpen = false"
+              >
+                <span class="icon">{{ opt.example }}</span>
+                <span class="label">{{ opt.label }}</span>
+                <span class="check" v-if="caseMode === opt.value">✓</span>
+                <small class="sub">{{ opt.help }}</small>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Level -->
+          <div class="dropdown level" :data-open="isLevelOpen">
+            <button
+              class="dropdown-trigger"
+              @click="isLevelOpen = !isLevelOpen; isCaseOpen = false"
+              aria-haspopup="listbox"
+              :aria-expanded="isLevelOpen"
+              title="Change level"
+            >
+              <span class="prefix">Level:</span>
+              <span class="value">{{ currentLevelLabel }}</span>
+              <span class="caret">▾</span>
+            </button>
+
+            <ul v-if="isLevelOpen" class="dropdown-menu" role="listbox">
+              <li
+                v-for="opt in levelOptions"
+                :key="opt.value"
+                class="dropdown-option"
+                role="option"
+                :aria-selected="level === opt.value"
+                @click="level = opt.value; isLevelOpen = false"
+              >
+                <span class="icon">{{ opt.example }}</span>
+                <span class="label">{{ opt.label }}</span>
+                <span class="check" v-if="level === opt.value">✓</span>
+                <small class="sub">{{ opt.help }}</small>
+              </li>
+            </ul>
+          </div>
         </div>
 
         <!-- hidden letter generator -->
@@ -402,17 +479,16 @@ watch([caseMode, level], async () => {
         <button class="close-x" @click="closeResultModal" aria-label="Close">✕</button>
         <img v-if="isCorrect" :src="trueImg" alt="Correct" />
         <img v-else :src="falseImg" alt="Incorrect" />
-        <p>{{ isCorrect ? '🌟 Great job!' : '🔁 Try again' }}</p>
+        <p>{{ isCorrect ? '🌟 Lets do Next!' : '🔁 Try again' }}</p>
       </div>
     </div>
 
-    <!-- milestone modal (video + toggles) -->
+    <!-- milestone modal (video + dropdowns) -->
     <div v-if="showMilestone" class="modal-overlay" @click="closeMilestone" aria-hidden="false">
       <div class="milestone-modal" role="dialog" aria-modal="true" @click.stop>
         <button class="close-x" @click="closeMilestone" aria-label="Close">✕</button>
 
         <div class="video-wrap">
-          <!-- ✅ no controls; plays inline, loops; keeps your existing layout -->
           <video
             :src="successVideoSrc"
             autoplay
@@ -425,27 +501,70 @@ watch([caseMode, level], async () => {
         </div>
         <h3 class="milestone-title">Great job! 🎉</h3>
         <p class="milestone-hint">Click on the cards to try the next level.</p>
+
         <div class="milestone-controls">
           <div class="flip-stack in-modal">
-            <button
-              class="flip"
-              :data-side="caseMode"
-              @click="caseMode = caseMode === 'upper' ? 'lower' : 'upper'"
-              title="Capital / Small"
-            >
-              <span class="front">Capital letters</span>
-              <span class="back">Small letters</span>
-            </button>
+            <!-- Case (modal) -->
+            <div class="dropdown case" :data-open="isCaseOpenModal">
+              <button
+                class="dropdown-trigger"
+                @click="isCaseOpenModal = !isCaseOpenModal; isLevelOpenModal = false"
+                aria-haspopup="listbox"
+                :aria-expanded="isCaseOpenModal"
+                title="Change case"
+              >
+                <span class="prefix">Case:</span>
+                <span class="value">{{ currentCaseLabel }}</span>
+                <span class="caret">▾</span>
+              </button>
 
-            <button
-              class="flip"
-              :data-side="level"
-              @click="level = level === 'easy' ? 'hard' : 'easy'; hintExplore()"
-              title="Easy / Hard"
-            >
-              <span class="front">Easy</span>
-              <span class="back">Hard</span>
-            </button>
+              <ul v-if="isCaseOpenModal" class="dropdown-menu" role="listbox">
+                <li
+                  v-for="opt in caseOptions"
+                  :key="opt.value"
+                  class="dropdown-option"
+                  role="option"
+                  :aria-selected="caseMode === opt.value"
+                  @click="caseMode = opt.value; isCaseOpenModal = false"
+                >
+                  <span class="icon">{{ opt.example }}</span>
+                  <span class="label">{{ opt.label }}</span>
+                  <span class="check" v-if="caseMode === opt.value">✓</span>
+                  <small class="sub">{{ opt.help }}</small>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Level (modal) -->
+            <div class="dropdown level" :data-open="isLevelOpenModal">
+              <button
+                class="dropdown-trigger"
+                @click="isLevelOpenModal = !isLevelOpenModal; isCaseOpenModal = false"
+                aria-haspopup="listbox"
+                :aria-expanded="isLevelOpenModal"
+                title="Change level"
+              >
+                <span class="prefix">Level:</span>
+                <span class="value">{{ currentLevelLabel }}</span>
+                <span class="caret">▾</span>
+              </button>
+
+              <ul v-if="isLevelOpenModal" class="dropdown-menu" role="listbox">
+                <li
+                  v-for="opt in levelOptions"
+                  :key="opt.value"
+                  class="dropdown-option"
+                  role="option"
+                  :aria-selected="level === opt.value"
+                  @click="level = opt.value; isLevelOpenModal = false; hintExplore()"
+                >
+                  <span class="icon">{{ opt.example }}</span>
+                  <span class="label">{{ opt.label }}</span>
+                  <span class="check" v-if="level === opt.value">✓</span>
+                  <small class="sub">{{ opt.help }}</small>
+                </li>
+              </ul>
+            </div>
           </div>
 
           <button
@@ -636,7 +755,6 @@ watch([caseMode, level], async () => {
 }
 .video-wrap { width: 60%; margin: 4px 160px 16px; }
 .milestone-controls { display: grid; gap: 12px; justify-items: center; }
-.flip-stack.in-modal .flip { width: 170px; height: 80px; }
 .btn-primary {
   background: #FD9B2D;
   font-size: 20px;
@@ -649,34 +767,61 @@ watch([caseMode, level], async () => {
 }
 .btn-primary:hover { filter: brightness(0.98); }
 
-/* flip buttons (under sound button) */
-.flip-stack { display:flex; flex-direction:row; gap:10px; margin:8px 0 4px; }
-.flip {
-  position: relative;
-  width: 150px; height: 50px;
-  border-radius: 10px;
-  border: 2px solid #0a0a0a10;
-  background: #f7dff9;
-  box-shadow: var(--shadow);
-  font-weight: 800;
+/* --- Dropdowns (replacing flip cards) --- */
+/* More space between the two controls */
+.flip-stack { display:flex; gap: 20px; margin: 12px 0 10px; align-items: center; margin-left: -35px; }
+.flip-stack.in-modal { gap: 22px; }
+
+/* Base dropdown */
+.dropdown { position: relative; }
+
+/* Thicker, high-contrast borders for triggers */
+.dropdown-trigger {
+  width: 200px; height: 52px;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 3px; font-weight: 800; letter-spacing: .02em;
+  border-radius: 12px; padding: 0 14px;
+  border: 4px solid #dfe5ee;  /* thicker border */
+  background: #fff; box-shadow: var(--shadow);
   cursor: pointer;
-  perspective: 500px;
 }
-.flip .front, .flip .back {
-  position:absolute; inset:0;
-  display:grid; place-items:center;
-  backface-visibility:hidden;
-  transition: transform .28s ease;
-  border-radius: inherit;
+.dropdown.case .dropdown-trigger  { background: #efeaff; border-color: #b9adff; }
+.dropdown.level .dropdown-trigger { background: #ffe8c7; border-color: #ffc27a; }
+
+.dropdown .prefix { opacity: .85; }
+.dropdown .value  { font-weight: 900; margin-left: 4px; }
+.dropdown .caret  { margin-left: 4px; transform: translateY(1px); }
+
+/* Menu: thicker border to match, a little lower to avoid overlap */
+.dropdown-menu {
+  position: absolute; top: calc(100% + 10px); left: 0;
+  width: 300px; background: #fff;
+  border: 4px solid #e9eef5;  /* thicker border */
+  border-radius: 14px; box-shadow: var(--shadow); padding: 8px; z-index: 60;
 }
-.flip .front { transform: rotateY(0deg); }
-.flip .back  { transform: rotateY(180deg); }
-.flip[data-side="upper"] .front,
-.flip[data-side="easy"]  .front { transform: rotateY(0deg); }
-.flip[data-side="lower"] .front,
-.flip[data-side="hard"]  .front { transform: rotateY(180deg); }
-.flip[data-side="lower"] .back,
-.flip[data-side="hard"]  .back  { transform: rotateY(0deg); }
+.dropdown-option {
+  display: grid; grid-template-columns: 36px 1fr auto; align-items: center;
+  gap: 8px; padding: 12px; border-radius: 10px; cursor: pointer;
+}
+.dropdown-option:hover { background: #f6f9ff; }
+.dropdown-option .label { font-weight: 800; color: var(--navy); }
+.dropdown-option .sub { grid-column: 2 / 3; font-size: 12px; opacity: .75; margin-top: -4px; }
+
+/* icons: circle for Case, square for Level (shape/color coding) */
+.dropdown.case  .dropdown-option .icon {
+  display:grid; place-items:center; width:30px; height:30px; border-radius:50%;
+  background:#7B61FF22; color:#7B61FF; font-weight:900;
+}
+.dropdown.level .dropdown-option .icon {
+  display:grid; place-items:center; width:30px; height:30px; border-radius:6px;
+  background:#FD9B2D22; color:#FD9B2D; font-weight:900;
+}
+.dropdown-option .check { font-weight: 900; color: var(--navy); }
+
+/* Larger triggers inside the milestone modal to match former flip size */
+.flip-stack.in-modal .dropdown .dropdown-trigger {
+  width: 190px; height: 80px; font-size: 18px;
+}
 
 /* mobile */
 @media (max-width: 980px) {
@@ -684,6 +829,9 @@ watch([caseMode, level], async () => {
   .dw-mascot img { width: 300px; transform: none; justify-self: center; }
   .dw-canvasArea { grid-template-columns: 1fr; margin-left: 0; }
   .dw-controls { flex-direction: row; justify-content: center; }
+
+  .dropdown-trigger { width: 160px; height: 52px; }
+  .dropdown-menu { width: 280px; }
 }
 
 /* capture highlight */
@@ -707,7 +855,6 @@ watch([caseMode, level], async () => {
 }
 .milestone-hint { 
   margin: 0 0 12px; 
-  font-size: 36px;
   opacity: .9; 
   font-size: 16px; 
 }
