@@ -66,5 +66,6 @@ const props = defineProps({
 .dw-head p { 
   font-size: clamp(20px, 4vw, 22px); 
   margin: 0; 
+  transform: translateX(30px);
 }
 </style>
