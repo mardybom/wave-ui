@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import NavBar from '@/components/NavBar.vue'
+import WaveHeader from '@/components/WaveHeader.vue'
 
 const fileInput = ref(null)
 const isProcessing = ref(false)
@@ -9,14 +10,20 @@ const progress = ref(0)
 
 let pdfjsLib = null
 let pdfMake = null
+let Tesseract = null
 
 onMounted(async () => {
   // Load pdf.js
   pdfjsLib = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.149/+esm')
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.149/build/pdf.worker.min.mjs'
   
+  // Load Tesseract.js
+  const tesseractModule = await import('https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/+esm')
+  Tesseract = tesseractModule.default
+  
   // Load pdfmake
-  pdfMake = window.pdfMake
+  const pdfMakeModule = await import('https://cdn.jsdelivr.net/npm/pdfmake@0.2.20/+esm')
+  pdfMake = pdfMakeModule.default
   
   // Register OpenDyslexic font
   if (pdfMake) {
@@ -33,12 +40,95 @@ onMounted(async () => {
 
 const handleFileUpload = async (event) => {
   const file = event.target.files[0]
-  if (!file || file.type !== 'application/pdf') {
-    statusMessage.value = 'Please select a valid PDF file'
+  if (!file) {
+    statusMessage.value = 'Please select a file'
     return
   }
   
-  await processPDF(file)
+  const fileType = file.type
+  const imageTypes = ['image/bmp', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/x-portable-bitmap']
+  
+  if (fileType === 'application/pdf') {
+    await processPDF(file)
+  } else if (imageTypes.includes(fileType) || file.name.match(/\.(bmp|jpg|jpeg|png|pbm|webp)$/i)) {
+    await processImage(file)
+  } else {
+    statusMessage.value = 'Please select a valid PDF or image file (BMP, JPG, PNG, PBM, WEBP)'
+  }
+}
+
+const processImage = async (file) => {
+  isProcessing.value = true
+  statusMessage.value = 'Loading image...'
+  progress.value = 10
+  
+  try {
+    statusMessage.value = 'Recognizing text from image...'
+    progress.value = 20
+    
+    // Perform OCR
+    const result = await Tesseract.recognize(
+      file,
+      'eng',
+      {
+        logger: (m) => {
+          if (m.status === 'recognizing text') {
+            const ocrProgress = Math.floor(m.progress * 60)
+            progress.value = 20 + ocrProgress
+            statusMessage.value = `Recognizing text: ${Math.floor(m.progress * 100)}%`
+          }
+        }
+      }
+    )
+    
+    statusMessage.value = 'Generating PDF with OpenDyslexic font...'
+    progress.value = 85
+    
+    const extractedText = result.data.text.trim()
+    
+    if (!extractedText) {
+      throw new Error('No text found in the image')
+    }
+    
+    // Create PDF with extracted text
+    const docDefinition = {
+      content: [
+        {
+          text: extractedText,
+          fontSize: 12,
+          margin: [0, 0, 0, 10]
+        }
+      ],
+      defaultStyle: {
+        font: 'OpenDyslexic',
+        fontSize: 12,
+        lineHeight: 1.5
+      },
+      pageMargins: [60, 60, 60, 60]
+    }
+    
+    const fileName = file.name.replace(/\.[^/.]+$/, '') + '-opendyslexic.pdf'
+    pdfMake.createPdf(docDefinition).download(fileName)
+    
+    statusMessage.value = 'Image converted successfully!'
+    progress.value = 100
+    
+    // Reset after 1 second
+    setTimeout(() => {
+      isProcessing.value = false
+      statusMessage.value = ''
+      progress.value = 0
+      if (fileInput.value) {
+        fileInput.value.value = ''
+      }
+    }, 1000)
+    
+  } catch (error) {
+    console.error('Error processing image:', error)
+    statusMessage.value = `Error: ${error.message}`
+    isProcessing.value = false
+    progress.value = 0
+  }
 }
 
 const processPDF = async (file) => {
@@ -95,12 +185,13 @@ const processPDF = async (file) => {
       pageMargins: [60, 60, 60, 60]
     }
     
-    pdfMake.createPdf(docDefinition).download('converted-opendyslexic.pdf')
+    const fileName = file.name.replace(/\.[^/.]+$/, '') + '-opendyslexic.pdf'
+    pdfMake.createPdf(docDefinition).download(fileName)
     
     statusMessage.value = 'PDF converted successfully!'
     progress.value = 100
     
-    // Reset after 1 seconds
+    // Reset after 1 second
     setTimeout(() => {
       isProcessing.value = false
       statusMessage.value = ''
@@ -125,19 +216,21 @@ const triggerFileInput = () => {
 
 <template>
   <NavBar />
+
+  <WaveHeader />
   
   <div class="container">
     <div class="upload-section">
-      <h1>PDF to OpenDyslexic Converter</h1>
+      <h1>PDF & Image to OpenDyslexic Converter</h1>
       <p class="description">
-        Upload a PDF file to convert its text to the OpenDyslexic font, 
+        Upload a PDF file or image (BMP, JPG, PNG, PBM, WEBP) to convert its text to the OpenDyslexic font, 
         which is designed to improve readability for people with dyslexia.
       </p>
       
       <input 
         ref="fileInput"
         type="file" 
-        accept="application/pdf"
+        accept="application/pdf,image/bmp,image/jpeg,image/jpg,image/png,image/webp,.pbm"
         @change="handleFileUpload"
         style="display: none"
       />
@@ -160,7 +253,7 @@ const triggerFileInput = () => {
           <polyline points="17 8 12 3 7 8" />
           <line x1="12" y1="3" x2="12" y2="15" />
         </svg>
-        {{ isProcessing ? 'Processing...' : 'Upload PDF' }}
+        {{ isProcessing ? 'Processing...' : 'Upload PDF or Image' }}
       </button>
       
       <div v-if="isProcessing" class="progress-container">
