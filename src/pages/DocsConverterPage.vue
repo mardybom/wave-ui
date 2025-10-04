@@ -102,7 +102,8 @@ const processImage = async (file) => {
       defaultStyle: {
         font: 'OpenDyslexic',
         fontSize: 12,
-        lineHeight: 1.5
+        characterSpacing: 1.5,
+        lineHeight: 2
       },
       pageMargins: [60, 60, 60, 60]
     }
@@ -180,7 +181,8 @@ const processPDF = async (file) => {
       defaultStyle: {
         font: 'OpenDyslexic',
         fontSize: 12,
-        lineHeight: 1.5
+        characterSpacing: 1.5,
+        lineHeight: 2
       },
       pageMargins: [60, 60, 60, 60]
     }
