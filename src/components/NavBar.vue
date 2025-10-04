@@ -13,6 +13,9 @@
         <router-link to="/learn"   class="link" active-class="active">
           <span class="icon" aria-hidden="true">📖</span> Start Learning
         </router-link>
+        <router-link to="/docs-converter"   class="link" active-class="active">
+          <span class="icon" aria-hidden="true">🔄</span> Docs Coverter
+        </router-link>
         <router-link to="/parents" class="link" active-class="active">
           <span class="icon" aria-hidden="true">💜</span> Parents Hub
         </router-link>
