@@ -5,21 +5,17 @@ import GameTopBar from '@/components/GameTopBar.vue'
 import DrawingPad from '@/components/DigitalWritingPage/DrawingPad.vue'
 import UpperPart from '@/components/DigitalWritingPage/UpperPart.vue'
 
-import trueImg from '@/assets/hibby_success.png'
 import falseImg from '@/assets/hibby_feedback.png'
 import successVideoSrc from '@/assets/hibby_success.mp4'
 
-/* reward images used by the runtime DOM (no template changes) */
 import STAR_IMG from '@/assets/star_2.png'
 import BADGE_BRONZE_IMG from '@/assets/bronze.png'
 import BADGE_SILVER_IMG from '@/assets/silver.png'
 import BADGE_GOLD_IMG from '@/assets/gold.png'
 
-/* ---------- state ---------- */
 const expectedLetter = ref('')
 const onReveal = async (ch) => { expectedLetter.value = ch; await nextTick(); startPromptCycle() }
 
-/* ---------- milestone (success video + in-modal toggles) ---------- */
 const showMilestone = ref(false)
 const successByLevel = reactive({ easy: 0, hard: 0 })
 
@@ -44,7 +40,6 @@ const upperPartRef = ref(null)
 
 const toPureBase64 = (dataURL) => dataURL.split(',')[1] ?? dataURL
 
-/* ---------- dropdowns ---------- */
 const caseMode = ref('upper')
 const level    = ref('easy')
 
@@ -69,7 +64,6 @@ const closeAllMenus = () => { isCaseOpen.value = false; isLevelOpen.value = fals
 const onGlobalPointer = (e) => { if (!e.target?.closest?.('.dropdown')) closeAllMenus() }
 const onGlobalKey = (e) => { if (e.key === 'Escape') closeAllMenus() }
 
-/* ---------- displayed (A/a or 2 letters in hard mode) ---------- */
 const displayed = ref('')
 const rebuildDisplayed = () => {
   if (!expectedLetter.value) { displayed.value = ''; return }
@@ -86,7 +80,6 @@ const rebuildDisplayed = () => {
 }
 watch([expectedLetter, caseMode, level], rebuildDisplayed, { immediate: true })
 
-/* ---------- ghost + lined background ---------- */
 const showGhost = ref(false)
 const linedPaperStyle = computed(() => ({
   background: `repeating-linear-gradient(
@@ -96,7 +89,6 @@ const linedPaperStyle = computed(() => ({
   )`
 }))
 
-/* ---------- audio ---------- */
 let audio
 const playAudio = () => {
   if (!displayed.value) return
@@ -109,12 +101,11 @@ const playAudio = () => {
     audio.currentTime = 0
     audio.onended = () => { i += 1; playNext() }
     audio.src = `/audio/letters/${chars[i].toLowerCase()}.mp3`
-    audio.play().catch(() => { /* ignore autoplay block */ })
+    audio.play().catch(() => {})
   }
   playNext()
 }
 
-/* ---------- prompt cycle ---------- */
 let ghostHideTimer = null
 let idleTimer = null
 const hasWritten = ref(false)
@@ -141,7 +132,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', onGlobalKey)
 })
 
-/* ---------- clear ---------- */
 const clearCanvas = () => {
   try { drawingPadRef.value?.clear?.() } catch {}
   isCorrect.value = null
@@ -149,7 +139,6 @@ const clearCanvas = () => {
   hasWritten.value = false
 }
 
-/* ---------- helpers for capture ---------- */
 const getInkDataURL = () => {
   if (drawingPadRef.value && typeof drawingPadRef.value.getImage === 'function') return drawingPadRef.value.getImage()
   const canvas = document.querySelector('.dw-pad canvas') || document.querySelector('canvas')
@@ -177,7 +166,6 @@ const make300x300 = (dataURL, bg = '#ffffff', size = 300) => new Promise((resolv
 
 const isChecking = ref(false)
 
-/* ==================== REWARDS: stars + badges ==================== */
 const REWARDS_SS_KEY = 'dw_rewards_session_v1'
 const rewards = reactive({ starsTotal: 0 })
 const starsInCycle = computed(() => rewards.starsTotal % 5)
@@ -191,41 +179,33 @@ const currentBadge = computed(() => {
 const saveRewards = () => { try { sessionStorage.setItem(REWARDS_SS_KEY, JSON.stringify({ starsTotal: rewards.starsTotal })) } catch {} }
 const clearRewards = () => { rewards.starsTotal = 0; try { sessionStorage.removeItem(REWARDS_SS_KEY) } catch {} }
 
-/* NEW: small helper for badge image */
 const badgeImgFor = (type) =>
   type === 'Gold' ? BADGE_GOLD_IMG : type === 'Silver' ? BADGE_SILVER_IMG : BADGE_BRONZE_IMG
 
-/* Start from 0 every time this page mounts */
 onMounted(() => { clearRewards(); ensureTrackerMounted(); updateTrackerUI() })
 
-/* award one star; returns true if it completed a 5-star cycle */
 function awardStar() {
   const prev = starsInCycle.value
   rewards.starsTotal += 1
   saveRewards()
-  updateTrackerUI()       // also updates badge visibility
+  updateTrackerUI()
   colorModalRowStar(prev)
   return rewards.starsTotal % 5 === 0
 }
 
-/* ---------- side tracker (absolute, to the right of the buttons) ---------- */
 const TRACKER_ID = 'dw-star-tracker'
 function ensureTrackerMounted() {
   if (document.getElementById(TRACKER_ID)) return
   const col = document.querySelector('.dw-controls')
   if (!col) return
-
-  /* make the controls column a positioning context*/
   if (!col.style.position) col.style.position = 'relative'
-
   const wrap = document.createElement('div')
   wrap.id = TRACKER_ID
   wrap.setAttribute('aria-hidden', 'true')
-
   const card = document.createElement('div')
   card.style.cssText = `
     width:76px; height: 70px padding:12px 10px; border-radius:18px; background:#fff; border:1px solid #e7edf3;
-    box-shadow:0 6px 20px rgba(15,43,70,0.06); display:grid; justify-items:center; transform: translateY(-70px)
+    box-shadow:0 6px 20px rgba(15,43,70,0.06); display:grid; justify-items:center; transform: translateY(-80px)
   `
   for (let i = 0; i < 5; i++) {
     const img = document.createElement('img')
@@ -233,24 +213,20 @@ function ensureTrackerMounted() {
     img.alt = 'star'
     img.src = STAR_IMG
     img.style.cssText = `
-      width:60px; height:80px; transition:transform .2s ease, filter .2s ease, opacity .2s ease;
+      width:55px; height:75px; transition:transform .2s ease, filter .2s ease, opacity .2s ease;
       filter: grayscale(1) brightness(1.5); opacity:.35;
     `
     card.appendChild(img)
   }
-
-  /* NEW: badge image placeholder (hidden until a medal is earned) */
   const badge = document.createElement('img')
   badge.setAttribute('data-badge', '1')
   badge.alt = 'badge'
   badge.style.cssText = `
-    width:60px; height:80px; margin-top:6px; display:none;
+    width:55px; height:75px; margin-top:6px; display:none;
   `
   card.appendChild(badge)
-
   wrap.appendChild(card)
   col.appendChild(wrap)
-
   const applyLayout = () => {
     if (window.matchMedia('(max-width: 980px)').matches) {
       wrap.style.position = 'static'
@@ -275,8 +251,6 @@ function updateTrackerUI() {
     else { img.style.filter = 'grayscale(100%)'; img.style.opacity = '.35' }
     img.style.transform = 'scale(1)'
   })
-
-  /* hide badge underneath based on currentBadge */
   const badgeEl = card.querySelector('img[data-badge]')
   if (badgeEl) {
     const type = currentBadge.value
@@ -290,7 +264,6 @@ function updateTrackerUI() {
   }
 }
 
-/* ---------- small result modal: star row + pop animation ---------- */
 const MODAL_ROW_ID = 'dw-star-row'
 function ensureModalRowMounted() {
   const modal = document.querySelector('.hibby-popup')
@@ -340,7 +313,6 @@ function colorModalRowStar(prevIndex) {
   requestAnimationFrame(() => { requestAnimationFrame(() => { img.style.transform = 'scale(1)' }) })
 }
 
-/* ---------- milestone medal (image under the title) ---------- */
 function ensureMedalInMilestone() {
   const modal = document.querySelector('.milestone-modal')
   if (!modal) return
@@ -357,7 +329,6 @@ function ensureMedalInMilestone() {
   medal.src = type === 'Gold' ? BADGE_GOLD_IMG : type === 'Silver' ? BADGE_SILVER_IMG : BADGE_BRONZE_IMG
 }
 
-/* ---------- capture + upload ---------- */
 const captureAndBuildJson = async () => {
   try {
     isChecking.value = true
@@ -380,7 +351,7 @@ const captureAndBuildJson = async () => {
     stopPromptCycle()
 
     if (isCorrect.value) {
-      const finishedCycle = awardStar()             // update stars + modal row
+      const finishedCycle = awardStar()
       successByLevel[level.value] = (successByLevel[level.value] ?? 0) + 1
       if (successByLevel[level.value] % 5 === 0) {
         isCorrect.value = null
@@ -397,7 +368,6 @@ const captureAndBuildJson = async () => {
   }
 }
 
-/* ---------- Next ---------- */
 const goNext = async () => {
   clearCanvas()
   if (upperPartRef.value?.nextCard) upperPartRef.value.nextCard()
@@ -411,10 +381,8 @@ const goNext = async () => {
   startPromptCycle()
 }
 
-/* ---------- child writing ---------- */
 const onChildWrite = () => { hasWritten.value = true; childResponded.value = true; stopPromptCycle() }
 
-/* ---------- Close small result modal ---------- */
 const closeResultModal = async () => {
   const wasCorrect = isCorrect.value === true
   isCorrect.value = null
@@ -422,11 +390,9 @@ const closeResultModal = async () => {
   else { clearCanvas(); await nextTick(); startPromptCycle() }
 }
 
-/* ---------- re-prompt when toggling ---------- */
-/* NEW: reset stars ONLY when level changes */
 watch([caseMode, level], async (nv, ov) => {
   await nextTick()
-  if (ov && nv[1] !== ov[1]) {            // level changed
+  if (ov && nv[1] !== ov[1]) {
     clearRewards()
     updateTrackerUI()
   }
@@ -434,15 +400,12 @@ watch([caseMode, level], async (nv, ov) => {
   startPromptCycle()
 })
 
-/* keep modal star row synced when success modal appears */
 watch(isCorrect, async (v) => { if (v === true) { await nextTick(); ensureTrackerMounted(); paintModalRow() } })
 
-/* add medal when milestone opens */
 watch(showMilestone, async (v) => { if (v) { await nextTick(); ensureMedalInMilestone() } })
 </script>
 
 <template>
-  <!-- template -->
   <GameTopBar />
   <div class="sky" aria-hidden="true">
     <svg class="wave" viewBox="0 0 1440 220" preserveAspectRatio="none">
@@ -471,7 +434,6 @@ watch(showMilestone, async (v) => { if (v) { await nextTick(); ensureMedalInMile
         </header>
 
         <div class="flip-stack">
-          <!-- dropdowns  -->
           <div class="dropdown case" :data-open="isCaseOpen">
             <button class="dropdown-trigger" @click="isCaseOpen = !isCaseOpen; isLevelOpen = false" aria-haspopup="listbox" :aria-expanded="isCaseOpen" title="Change case">
               <span class="prefix">Case:</span>
@@ -524,7 +486,6 @@ watch(showMilestone, async (v) => { if (v) { await nextTick(); ensureMedalInMile
       </section>
     </section>
 
-    <!-- modals  -->
     <div v-if="isCorrect !== null" class="modal-overlay" @click="closeResultModal" aria-hidden="false">
       <div class="hibby-popup" :data-state="isCorrect ? 'ok' : 'nope'" role="dialog" aria-modal="true" @click.stop>
         <button class="close-x" @click="closeResultModal" aria-label="Close">✕</button>
@@ -544,7 +505,6 @@ watch(showMilestone, async (v) => { if (v) { await nextTick(); ensureMedalInMile
         <p class="milestone-hint">Click on the cards to try the next level.</p>
         <div class="milestone-controls">
           <div class="flip-stack in-modal">
-            <!-- dropdowns in modal  -->
             <div class="dropdown case" :data-open="isCaseOpenModal">
               <button class="dropdown-trigger" @click="isCaseOpenModal = !isCaseOpenModal; isLevelOpenModal = false" aria-haspopup="listbox" :aria-expanded="isCaseOpenModal" title="Change case">
                 <span class="prefix">Case:</span>
@@ -586,7 +546,7 @@ watch(showMilestone, async (v) => { if (v) { await nextTick(); ensureMedalInMile
 </template>
 
 <style scoped>
-/* styles */
+:global(html, body){height:100%;margin:0;overflow:hidden}
 .sky{ position: absolute; top: var(--nav-h); left: 0; right: 0; height: 200px; overflow: hidden; z-index: 0; pointer-events: none; }
 .wave{ position: absolute; left: 50%; transform: translateX(-50%); width: 100%; height: 50%; }
 :root { --sand: #fff3e6; --navy: #0e2a3a; --card: #ffffff; --shadow: 0 10px 28px rgba(9, 30, 66, .08); --orange: #ff951f; --orange-d: #d07916; }
@@ -629,7 +589,6 @@ watch(showMilestone, async (v) => { if (v) { await nextTick(); ensureMedalInMile
 .next-link:disabled { opacity: .5; cursor: default; }
 .next-link .chev { transform: translateY(1px); }
 
-/* modal (small result) */
 .modal-overlay { position: fixed; inset: 0; background: rgba(9, 30, 66, 0.45); backdrop-filter: blur(2px) saturate(110%); display: flex; align-items: center; justify-content: center; z-index: 999; }
 .hibby-popup { position: relative; max-width: 700px; max-height: 500px; width: calc(200% - 32px); background: #fff; border: 2px solid #ddd; border-radius: 16px; box-shadow: 0 16px 40px rgba(0,0,0,.25); text-align: center; font-size: 24px; animation: popIn .22s ease; }
 .hibby-popup img { width: 200px; height: auto; }
@@ -642,14 +601,12 @@ watch(showMilestone, async (v) => { if (v) { await nextTick(); ensureMedalInMile
 
 @keyframes popIn { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
 
-/* milestone modal */
 .milestone-modal { position: relative; max-width: 720px; width: calc(100% - 32px); background: #fff; border: 2px solid #ddd; border-radius: 16px; box-shadow: 0 16px 40px rgba(0,0,0,.25); text-align: center; padding: 18px 18px 22px; animation: popIn .22s ease; }
 .video-wrap { width: 60%; margin: 4px 160px 16px; }
 .milestone-controls { display: grid; gap: 12px; justify-items: center; }
 .btn-primary { background: #FD9B2D; font-size: 20px; width: 180px; height: 80px; color: #0f2b46; border-radius: 12px; padding: 12px 18px; font-weight: 800; box-shadow: var(--shadow); }
 .btn-primary:hover { filter: brightness(0.98); }
 
-/* Dropdowns */
 .flip-stack { display:flex; gap: 20px; margin: 12px 0 10px; align-items: center; margin-left: -35px; }
 .flip-stack.in-modal { gap: 22px; }
 .dropdown { position: relative; }
@@ -669,7 +626,6 @@ watch(showMilestone, async (v) => { if (v) { await nextTick(); ensureMedalInMile
 .dropdown-option .check { font-weight: 900; color: var(--navy); }
 .flip-stack.in-modal .dropdown .dropdown-trigger { width: 190px; height: 80px; font-size: 18px; }
 
-/* mobile */
 @media (max-width: 980px) {
   .dw-main { grid-template-columns: 1fr; }
   .dw-mascot img { width: 300px; transform: none; justify-self: center; }
@@ -679,14 +635,12 @@ watch(showMilestone, async (v) => { if (v) { await nextTick(); ensureMedalInMile
   .dropdown-menu { width: 280px; }
 }
 
-/* capture highlight */
 .highlight { animation: pulse 1s infinite; border: 2px solid #e6e2fd; box-shadow: 0 0 12px #8277be; }
 @keyframes pulse { 0%{transform:scale(1);} 50%{transform:scale(1.05);} 100%{transform:scale(1);} }
 
 .milestone-title { font-weight: 800; font-size: 48px; margin: 6px 0 2px; letter-spacing: .02em; color: var(--navy); }
 .milestone-hint  { margin: 0 0 12px; opacity: .9; font-size: 16px; }
 
-/* pulse anim for Keep Exploring */
 .pulse { animation: pulseScale .8s ease-in-out infinite; will-change: transform; }
 @keyframes pulseScale { 0%{transform:scale(1);} 50%{transform:scale(1.08);} 100%{transform:scale(1);} }
 </style>
