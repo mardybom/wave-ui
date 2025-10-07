@@ -7,6 +7,7 @@ import LetterSoundMappingPage from '@/pages/LetterSoundMappingPage.vue'
 import DigitalWritingPage from '@/pages/DigitalWritingPage.vue'
 import SentenceRearrangingPage from '@/pages/SentenceRearrangingPage.vue'
 import ImageLabellingPage from '@/pages/ImageLabellingPage.vue'
+import DocsConverterPage from '@/pages/DocsConverterPage.vue'
 
 
 
@@ -21,6 +22,7 @@ const routes = [
   { path: '/Digital-writing',name: 'DigitalWriting', component: DigitalWritingPage },
   { path: '/sentence-rearranging', name: 'SentenceRearranging', component: SentenceRearrangingPage },
   { path: '/image-labelling', name: 'ImageLabelling', component: ImageLabellingPage },
+  { path: '/docs-converter', name: 'docsConverter', component: DocsConverterPage },
   // iteration1
   { 
     path: '/iteration1',

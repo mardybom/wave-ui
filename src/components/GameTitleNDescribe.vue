@@ -6,7 +6,7 @@
   - title: String，必填 (required)
     页面标题（显示在 h1 中）
     Example: <GameHeader title="Sentence Rearranging" description="Rearrange the words..." />
-    
+
   - description: String，必填 (required)
     页面简短描述（显示在标题下方）
     Example: <GameHeader title="Image Labelling" description="Look at the picture and choose the correct word!" />
@@ -53,6 +53,10 @@ const props = defineProps({
   z-index: 100;
   margin-top: 30px;   
   margin-bottom: 20px;
+
+  padding-left: 10vw;   /* 左边留出 10% 屏幕宽度 */
+  padding-right: 10vw;  /* 右边留出 10% 屏幕宽度 */
+  box-sizing: border-box; /* 确保 padding 不会撑大宽度 */
 }
 
 .head-row { 

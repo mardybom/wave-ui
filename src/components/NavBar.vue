@@ -1,20 +1,27 @@
 <template>
   <nav class="nav">
     <div class="navbar-inner">
-      <router-link to="/" class="link">
-        <img src="@/assets/logo.png" alt="" class="logo" />
-        <span class="brand-text">Wave</span>
-      </router-link>
+      <!-- Left section: slot for custom content or default branding -->
+      <div class="left-section">
+        <slot name="left">
+          <router-link to="/" class="brand">
+            <img src="@/assets/logo.png" alt="" class="logo" />
+            <span class="brand-text">Wave</span>
+          </router-link>
+        </slot>
+      </div>
 
+      <!-- Right section: navigation links -->
       <div class="links">
-        <router-link to="/"        class="link" active-class="active">
-          <span class="icon" aria-hidden="true">🏠</span> Home
-        </router-link>
-        <router-link to="/learn"   class="link" active-class="active">
-          <span class="icon" aria-hidden="true">📖</span> Start Learning
-        </router-link>
-        <router-link to="/parents" class="link" active-class="active">
-          <span class="icon" aria-hidden="true">💜</span> Parents Hub
+        <router-link 
+          v-for="link in links" 
+          :key="link.to"
+          :to="link.to" 
+          class="link" 
+          active-class="active"
+        >
+          <span class="icon" aria-hidden="true">{{ link.icon }}</span>
+          <span class="link-text">{{ link.text }}</span>
         </router-link>
       </div>
     </div>
@@ -22,7 +29,12 @@
 </template>
 
 <script setup>
-/* none */
+const links = [
+  { to: '/', icon: '🏠', text: 'Home' },
+  { to: '/learn', icon: '📖', text: 'Start Learning' },
+  { to: '/docs-converter', icon: '🔄', text: 'Docs Converter' },
+  { to: '/parents', icon: '💜', text: 'Parents Hub' }
+];
 </script>
 
 <style scoped>
@@ -37,9 +49,8 @@
   box-shadow: none !important;
 }
 
-/* full width bar, but center the contents up to a max width */
 .navbar-inner{
-  height: 100px;          /* pick the exact height your bar uses */
+  height: 100px;
   max-width: 1700px;
   margin: 0 auto;
   padding: 0 20px;
@@ -48,29 +59,68 @@
   justify-content: space-between;
 }
 
+.left-section{
+  display: flex;
+  align-items: center;
+}
 
-.brand{ display:flex; align-items:center; gap:10px; }
-.logo{ width:100px; height:100px; object-fit:contain; }
+.brand{ 
+  border-radius: 12px;
+  display:flex; 
+  align-items:center; 
+  gap:10px; 
+}
+
+.brand:hover{ 
+  background: rgba(15,42,67,.06); 
+}
+
+.logo{ 
+  width:100px; 
+  height:100px; 
+  object-fit:contain; 
+}
+
 .brand-text{
   font-family: 'OpenDyslexic', system-ui, sans-serif;
-  font-weight: 800; letter-spacing: .4px;
+  font-weight: 800; 
+  letter-spacing: .4px;
   transform: translateX(-15%);
   color: var(--ink-900);
   font-size: 24px;
 }
 
-.links{ display:flex; align-items:center; gap:8px; }
-.link{
-  display:flex; align-items:center; gap:8px;
-  padding:8px 10px; border-radius: 12px;
-  color: var(--ink-700); font-weight: 600;
-  font-size: 24px; font-family: 'OpenDyslexic';
+.links{ 
+  display:flex; 
+  align-items:center; 
+  gap:8px; 
 }
-.link:hover{ background: rgba(15,42,67,.06); }
-.active{ background: rgba(15,42,67,.08); color: var(--ink-900); }
+
+.link{
+  display:flex; 
+  align-items:center; 
+  gap:8px;
+  padding:8px 10px; 
+  border-radius: 12px;
+  color: var(--ink-700); 
+  font-weight: 600;
+  font-size: 24px; 
+  font-family: 'OpenDyslexic';
+}
+
+.link:hover{ 
+  background: rgba(15,42,67,.06); 
+}
+
+.active{ 
+  background: rgba(15,42,67,.08); 
+  color: var(--ink-900); 
+}
 
 @media (max-width: 720px){
   .brand-text{ display:none; }
   .link{ gap:6px; padding:8px; }
+  .link-text{ display:none; }
+  .icon{ font-size: 20px; }
 }
 </style>
