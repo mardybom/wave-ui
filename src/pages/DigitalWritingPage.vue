@@ -145,22 +145,48 @@ const getInkDataURL = () => {
   if (!canvas) throw new Error('Ink canvas not found')
   return canvas.toDataURL('image/png')
 }
-const make1920x1080 = (dataURL, bg = '#ffffff', width = 1920, height = 1080) => new Promise((resolve, reject) => {
 
+// replace the old make300x300 function completely
+const make1920x1080 = (dataURL, bg = '#ffffff', width = 1920, height = 1080) => new Promise((resolve, reject) => {
   const img = new Image()
   img.onload = () => {
     const out = document.createElement('canvas')
-    out.width = width; out.height = height
+    out.width = width
+    out.height = height
     const ctx = out.getContext('2d')
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, width, height)
-    const sw = img.width, sh = img.height, sAspect = sw / sh
+
+    // Fill background
+    ctx.fillStyle = bg
+    ctx.fillRect(0, 0, width, height)
+
+    // Get aspect ratio and fit the image within 1920×1080
+    const sw = img.width
+    const sh = img.height
+    const sAspect = sw / sh
+
     let dw, dh, dx, dy
-    if (sAspect >= 1) { dw = size; dh = Math.round(size / sAspect); dx = 0; dy = Math.round((size - dh) / 2) }
-    else { dh = size; dw = Math.round(size * sAspect); dy = 0; dx = Math.round((size - dw) / 2) }
-    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'
+    const targetAspect = width / height
+
+    if (sAspect > targetAspect) {
+      // Image is wider — fit width
+      dw = width
+      dh = Math.round(width / sAspect)
+      dx = 0
+      dy = Math.round((height - dh) / 2)
+    } else {
+      // Image is taller — fit height
+      dh = height
+      dw = Math.round(height * sAspect)
+      dy = 0
+      dx = Math.round((width - dw) / 2)
+    }
+
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
     ctx.drawImage(img, 0, 0, sw, sh, dx, dy, dw, dh)
     resolve(out.toDataURL('image/png'))
   }
+
   img.onerror = reject
   img.src = dataURL
 })
@@ -335,7 +361,7 @@ const captureAndBuildJson = async () => {
     isChecking.value = true
     const rawDataURL = getInkDataURL()
     let dataURL
-    try { dataURL = await make1920x1080(rawDataURL, '#ffffff', 300) } catch { dataURL = rawDataURL }
+    try { dataURL = await make1920x1080(rawDataURL, '#ffffff', 1920, 1080) } catch { dataURL = rawDataURL }
 
     const payload = {
       expected_letter: (displayed.value || '').slice(0, level.value === 'hard' ? 2 : 1),
