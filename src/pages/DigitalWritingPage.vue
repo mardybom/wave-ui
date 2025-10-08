@@ -150,9 +150,9 @@ const make1920x1080 = (dataURL, bg = '#ffffff', width = 1920, height = 1080) => 
   const img = new Image()
   img.onload = () => {
     const out = document.createElement('canvas')
-    out.width = size; out.height = size
+    out.width = width; out.height = height
     const ctx = out.getContext('2d')
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, size, size)
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, width, height)
     const sw = img.width, sh = img.height, sAspect = sw / sh
     let dw, dh, dx, dy
     if (sAspect >= 1) { dw = size; dh = Math.round(size / sAspect); dx = 0; dy = Math.round((size - dh) / 2) }
