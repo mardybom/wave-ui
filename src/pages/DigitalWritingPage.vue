@@ -145,7 +145,8 @@ const getInkDataURL = () => {
   if (!canvas) throw new Error('Ink canvas not found')
   return canvas.toDataURL('image/png')
 }
-const make300x300 = (dataURL, bg = '#ffffff', size = 300) => new Promise((resolve, reject) => {
+const make1920x1080 = (dataURL, bg = '#ffffff', width = 1920, height = 1080) => new Promise((resolve, reject) => {
+
   const img = new Image()
   img.onload = () => {
     const out = document.createElement('canvas')
@@ -334,7 +335,7 @@ const captureAndBuildJson = async () => {
     isChecking.value = true
     const rawDataURL = getInkDataURL()
     let dataURL
-    try { dataURL = await make300x300(rawDataURL, '#ffffff', 300) } catch { dataURL = rawDataURL }
+    try { dataURL = await make1920x1080(rawDataURL, '#ffffff', 300) } catch { dataURL = rawDataURL }
 
     const payload = {
       expected_letter: (displayed.value || '').slice(0, level.value === 'hard' ? 2 : 1),
