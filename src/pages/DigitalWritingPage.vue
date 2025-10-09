@@ -573,7 +573,6 @@ watch(showMilestone, async (v) => { if (v) { await nextTick(); ensureMedalInMile
 </template>
 
 <style scoped>
-:global(html, body){height:100%;margin:0;overflow:hidden}
 .sky{ position: absolute; top: var(--nav-h); left: 0; right: 0; height: 200px; overflow: hidden; z-index: 0; pointer-events: none; }
 .wave{ position: absolute; left: 50%; transform: translateX(-50%); width: 100%; height: 50%; }
 :root { --sand: #fff3e6; --navy: #0e2a3a; --card: #ffffff; --shadow: 0 10px 28px rgba(9, 30, 66, .08); --orange: #ff951f; --orange-d: #d07916; }
