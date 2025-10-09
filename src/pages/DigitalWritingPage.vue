@@ -267,7 +267,7 @@ const captureAndBuildJson = async () => {
     }
 
     const res = await axios.post(
-      'https://wave-api-monashie.azurewebsites.net/alphabet_mastery',
+      'https://wave-api-build2.azurewebsites.net/alphabet_mastery',
       payload,
       { headers: { 'Content-Type': 'application/json' } }
     )
