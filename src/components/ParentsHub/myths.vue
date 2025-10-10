@@ -60,7 +60,7 @@ import elleFaq from '@/assets/elle_faq.png'
 import hibbyFaq from '@/assets/hibby_faq.png'
 
 const MYTHS = [
-  { title: 'Reading and writing letters backwards is the main sign of dyslexia.', description: 'Letter reversals are common in young children and not always a sign of dyslexia. If they continue past first grade, it may signal the need for evaluation.' },
+  { title: 'Reading and writing letters backwards is a sign of dyslexia.', description: 'Letter reversals are common but not always a sign of dyslexia. If they continue past first grade, it may signal the need for evaluation.' },
   { title: 'Dyslexia goes away once kids learn to read.', description: 'Dyslexia is lifelong. Even after learning to read, kids may still struggle with fluency, comprehension, spelling, and writing.' },
   { title: 'Dyslexia can be cured.', description: 'There’s no “cure” for dyslexia—it’s a lifelong difference. But interventions and strategies help people thrive.' },
   { title: 'All dyslexic people have the same struggles.', description: 'Dyslexia looks different for each person—some may struggle more with spelling, others with fluency or memory.' },
@@ -247,7 +247,7 @@ const sliderStyle = computed(() => ({
 .item-row.right .item-mascot{ right: -80px; left: auto; }
 .item-row.left  .item-mascot{  left: -80px;  right: auto;transform: scaleX(-1); }
 
-.wave-mythsfaqs.is-faq .item-mascot{ width: clamp(160px, 24vw, 360px); top: -70px; }
+.wave-mythsfaqs.is-faq .item-mascot{ width: clamp(160px, 24vw, 360px); top: -130px; }
 .wave-mythsfaqs.is-faq .item-row{ margin-top: clamp(44px, 4.5vw, 84px); }
 .wave-mythsfaqs.is-faq .item-row.right .item-card{ padding-right: clamp(220px, 26vw, 360px); }
 .wave-mythsfaqs.is-faq .item-row.left  .item-card{ padding-left:  clamp(220px, 26vw, 360px); }
