@@ -1,7 +1,6 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 
-// 页面组件（按你项目实际位置改名/改路径即可）
 import HomePage from '@/pages/HomePage.vue'
 import LetterSoundMappingPage from '@/pages/LetterSoundMappingPage.vue'
 import DigitalWritingPage from '@/pages/DigitalWritingPage.vue'
@@ -31,20 +30,28 @@ const routes = [
       window.location.href = 'https://orange-water-0c6bfac00.2.azurestaticapps.net/'
     }
   },
+  // iteration2
+  { 
+    path: '/iteration2',
+    name: 'iteration2',
+    beforeEnter() {
+      window.location.href = 'https://black-smoke-0149afd00.1.azurestaticapps.net'
+    }
+  },
 
   { path: '/:pathMatch(.*)*', redirect: '/' },
   
 ]
 
 export default createRouter({
-  history: createWebHistory(), // 不带 # 的 URL
+  history: createWebHistory(),
   routes,
     scrollBehavior() {
     return new Promise((resolve) => {
         setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' }) // 平滑滚动
+        window.scrollTo({ top: 0, behavior: 'smooth' })
         resolve()
-        }, 100) // 等 DOM 渲染完再滚
+        }, 100)
     })
     },
 })
