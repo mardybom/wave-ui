@@ -340,6 +340,12 @@ function onMessageWasSent(message, done) {
 </template>
 
 <style>
+.sc-launcher { position: fixed !important; z-index: 99999 !important; }
+.sc-chat-window {
+  position: fixed !important;
+  z-index: 9999 !important;
+}
+
 .chatbox-resizable .sc-typing-indicator { display: none !important; }
 .chatbox-resizable.typing-on .sc-typing-indicator { display: flex !important; }
 
