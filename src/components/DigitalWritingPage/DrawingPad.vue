@@ -54,7 +54,16 @@ const getXY = (e) => {
   return [e.clientX - r.left, e.clientY - r.top]
 }
 
-const getImage = () => canvas.value.toDataURL('image/png')
+const getImage = () => {
+  const exportCanvas = document.createElement('canvas')
+  exportCanvas.width = 1920
+  exportCanvas.height = 1080
+  const exportCtx = exportCanvas.getContext('2d')
+  exportCtx.fillStyle = '#ffffff'
+  exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height)
+  exportCtx.drawImage(canvas.value, 0, 0, exportCanvas.width, exportCanvas.height)
+  return exportCanvas.toDataURL('image/png')
+}
 
 const clear = () => {
   const { width, height } = canvas.value
