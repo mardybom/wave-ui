@@ -30,12 +30,14 @@ import iconSoon from '@/assets/letter_sound_mapping_bg.png'
           Ready, set, go! Choose a game and show how amazing you are!
         </h1>
 
-        <div class="cards-grid">
-          <ButtonCard label="Letter sound mapping" to="/letter-sound" :bg="iconLetter" bg-size="cover" bg-position="center" bg-opacity="0.3" />
-          <ButtonCard label="Digital Writing" to="/Digital-writing" :bg="iconWriting" bg-size="cover" bg-position="center" bg-opacity="0.6" />
-          <ButtonCard label="Sentence Rearranging" to="/sentence-rearranging" :bg="iconSentence" bg-size="cover" bg-position="center" bg-opacity="0.3" />
-          <ButtonCard label="Picture Word Matching" to="/image-labelling" :bg="iconMatch" bg-size="cover" bg-position="center" bg-opacity="0.3" />
-          <ButtonCard label="Reading Speed Test" to="/reading-speed" :bg="iconSoon" bg-size="cover" bg-position="center" bg-opacity="0.3" />
+        <div class="scroll-x">
+          <div class="cards-grid">
+            <ButtonCard label="Letter sound mapping" to="/letter-sound" :bg="iconLetter" bg-size="cover" bg-position="center" bg-opacity="0.3" />
+            <ButtonCard label="Digital Writing" to="/Digital-writing" :bg="iconWriting" bg-size="cover" bg-position="center" bg-opacity="0.6" />
+            <ButtonCard label="Sentence Rearranging" to="/sentence-rearranging" :bg="iconSentence" bg-size="cover" bg-position="center" bg-opacity="0.3" />
+            <ButtonCard label="Picture Word Matching" to="/image-labelling" :bg="iconMatch" bg-size="cover" bg-position="center" bg-opacity="0.3" />
+            <ButtonCard label="Reading Speed Test" to="/reading-speed" :bg="iconSoon" bg-size="cover" bg-position="center" bg-opacity="0.3" />
+          </div>
         </div>
       </section>
 
@@ -95,21 +97,31 @@ import iconSoon from '@/assets/letter_sound_mapping_bg.png'
   padding-left: 5rem;
 }
 .lead {
-  margin: 0;
+   margin: 0 20px;
   padding: 0;
   font-size: clamp(1.5rem, 2.5vw, 2rem);
   font-family: 'OpenDyslexic', Arial, sans-serif;
   text-align: left;
   flex-shrink: 0;
 }
-.cards-grid {
-  display: flex;
-  flex-wrap: nowrap;
+.scroll-x{
+  width: 70vw;
+  margin: 0 auto;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 20px; 
+}
+
+.cards-grid{
+  display: inline-flex;
   gap: 16px;
   padding: 10px 2px;
   justify-content: flex-start;
-  overflow-x: hidden;
+  width: max-content;
 }
+
 .mascot {
   flex: 0 0 auto;
   max-width: 455px;
@@ -118,8 +130,9 @@ import iconSoon from '@/assets/letter_sound_mapping_bg.png'
   object-fit: contain;
   margin-left: 0;
 }
-@media (max-width: 900px) {
+@media (max-width: 720px) {
   .main-row {
+    margin-top: 40px;
     flex-direction: column;
     align-items: center;
     padding: 0.5rem 1rem;
@@ -127,10 +140,17 @@ import iconSoon from '@/assets/letter_sound_mapping_bg.png'
   .left-col {
     width: 100%;
     padding-left: 0;
+    flex: 0 0 auto;
   }
   .lead {
     text-align: center;
     font-size: clamp(1rem, 4vw, 1.3rem);
+  }
+  .scroll-x{
+    width: 100vw;
+    transform: scale(0.7);
+    transform-origin: top center;
+    padding-bottom: 20px; 
   }
   .cards-grid {
     gap: 12px;
@@ -138,7 +158,7 @@ import iconSoon from '@/assets/letter_sound_mapping_bg.png'
   }
   .mascot {
     margin-left: 0;
-    max-width: 200px;
+    max-width: 220px;
     width: 150px;
   }
 }

@@ -1,19 +1,9 @@
-<template>
-  <div class="lsm-page">
-    <component
-      :is="activeComp"
-      @request-next-level="goLevel2"
-      @request-prev-level="goLevel1"
-      @request-start-learning="goStartLeanrningPage"
-    />
-  </div>
-</template>
-
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import LevelOne from '@/components/LetterSoundMappingPage/Level_1.vue'
 import LevelTwo from '@/components/LetterSoundMappingPage/Level_2.vue'
+import ScreenSizeWarning from '@/components/ScreenSizeWarning.vue'
 
 /**
  * We keep only ONE route (/letter-sound).
@@ -51,12 +41,26 @@ function goLevel1 () {
 function goStartLeanrningPage (){
   router.push({ name: 'startLearning' })
 }
-
 </script>
+
+<template>
+    <ScreenSizeWarning />
+    <div class="lsm-page">
+      <component
+        :is="activeComp"
+        @request-next-level="goLevel2"
+        @request-prev-level="goLevel1"
+        @request-start-learning="goStartLeanrningPage"
+      />
+    </div>
+</template>
+
+
 
 <style scoped>
 .lsm-page{
   min-height:100vh;
   background:  #fff6e9;
 }
+
 </style>
