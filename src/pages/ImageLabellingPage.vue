@@ -7,6 +7,9 @@ import ImageChoiceCard from '@/components/PictureWordMatchingPage/ImageChoiceCar
 import elleImage from '@/assets/hibby_1.png'
 import successVideoSrc from '@/assets/hibby_success.mp4'
 
+import ScreenSizeWarning from '@/components/ScreenSizeWarning.vue'
+
+
 const API = import.meta.env.VITE_API_IMAGE_LABELING
 
 const pic = ref(null)
@@ -83,6 +86,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <ScreenSizeWarning />
   <div class="page-container">
     <GameTopBar title="ImageLabellingPage" />
     <WaveHeader top="80px" height="200px" zIndex="0"/>
@@ -128,6 +132,7 @@ onBeforeUnmount(() => {
   min-height: 50vh;
   width: 100vw;
   position: relative;
+  background-color: #fdf8ea;
 }
 
 .bossWrapper {

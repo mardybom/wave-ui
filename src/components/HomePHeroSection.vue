@@ -58,28 +58,35 @@
 .wave{ width:100%; height:100%; display:block; }
 
 /* inner layout */
-.container{
+.container {
+  width: 90%;
   max-width: 1650px;
   margin: 0 auto;
-  padding: 0px 24px 56px;
+  padding: 0px 0px 56px; 
 }
-.grid{
-  display:grid;
-  grid-template-columns: 1.1fr 1fr;
-  align-items:center;
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr; /* 默认：左文字 + 右图片两列 */
+  align-items: center;
   margin-top: 72px;
+  gap: 24px; /* 可选，让两列之间有点间距 */
 }
+
+
 
 /* NEW: constrain the copy column so .cta can align its ends */
 .copy{
   max-width: clamp(480px, 52vw, 720px);
+  position: relative; /* 必须有 position 才能让 z-index 生效 */
+  z-index: 10;        /* 数值越大，层级越高 */
 }
 
 .copy h1{
   font-family: 'OpenDyslexic', system-ui, sans-serif;
   font-weight: 800;
   font-size: 50px;
-  margin: 0 0 8px 0px;
+  margin: 0 0 10px 0px;
   color: var(--ink-900);
 }
 
@@ -97,8 +104,9 @@
   display:flex;
   justify-content: space-between;   /* <-- spreads the two buttons */
   align-items: center;
+  flex-wrap: wrap;                 /* ✅ 宽度不够时换行 */
+  gap: 12px;                       /* ✅ 换行后上下/左右间距 */
   width: 100%;
-  gap: 12px;                        /* keeps a gap if they wrap on small viewports */
   margin-top: 12px;
 }
 
@@ -138,17 +146,58 @@
     box-shadow: 0 0 0px rgba(0, 180, 255, 0.6);   /* back to soft blue */
   }
 }
-.btn--secondary{ background: var(--cta-2); color:#14120F; transform:translateX(-20%) }
+.btn--secondary{ 
+  background: var(--cta-2); 
+  color:#14120F; 
+  /*transform:translateX(-20%) */ 
+}
 
 .btn:hover{ transform: translateY(-1px); box-shadow: 0 12px 24px rgba(0,0,0,.9); }
 .btn:active{ transform: translateY(0);   box-shadow: 0 8px 20px rgba(0,0,0,.10); }
-.btn--secondary:hover{transform:translateX(-20%)}
+
+/*
+.btn--secondary:hover{
+  transform:translateX(-20%)
+}
+*/
 
 /* mascots */
-.mascots{ display:flex; justify-content:center; gap: clamp(10px, 5vw, 48px); }
-.mascot{
-  width: clamp(700px, 22vw, 220px); height:auto;
+.mascots {
+  display: flex;
+  justify-content: center;
+  gap: clamp(10px, 5vw, 48px);
+}
+
+.mascot {
+  width: 40vw;  /* ✅ 改成屏幕宽度的 30% */
+  height: auto; /* 保持比例不变 */
   filter: drop-shadow(0 12px 12px rgba(0,0,0,.12));
+}
+
+/* ✅ 当屏幕宽度 ≤ 900px 时（平板或手机）自动改为一列 */
+@media (max-width: 720px) {
+  .grid { 
+    grid-template-columns: 1fr; 
+    text-align: center; 
+    justify-items: center;
+  }
+
+  .mascots { justify-content: center; }
+
+  .mascot{
+    width: 70vw;
+    height: auto;
+    margin: 0 auto;
+  }
+
+  .copy h1 { font-size: 28px; }
+
+  .tagline { font-size: 16px; }
+
+  .cta .btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 </style>

@@ -13,6 +13,9 @@ import BADGE_BRONZE_IMG from '@/assets/bronze.png'
 import BADGE_SILVER_IMG from '@/assets/silver.png'
 import BADGE_GOLD_IMG from '@/assets/gold.png'
 
+import ScreenSizeWarning from '@/components/ScreenSizeWarning.vue'
+
+
 const expectedLetter = ref('')
 const onReveal = async (ch) => { expectedLetter.value = ch; await nextTick(); startPromptCycle() }
 
@@ -433,6 +436,7 @@ watch(showMilestone, async (v) => { if (v) { await nextTick(); ensureMedalInMile
 </script>
 
 <template>
+  <ScreenSizeWarning />
   <GameTopBar />
   <div class="sky" aria-hidden="true">
     <svg class="wave" viewBox="0 0 1440 220" preserveAspectRatio="none">

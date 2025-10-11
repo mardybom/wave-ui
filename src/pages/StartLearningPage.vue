@@ -36,7 +36,7 @@ import iconSoon from '@/assets/letter_sound_mapping_bg.png'
             <ButtonCard label="Digital Writing" to="/Digital-writing" :bg="iconWriting" bg-size="cover" bg-position="center" bg-opacity="0.6" />
             <ButtonCard label="Sentence Rearranging" to="/sentence-rearranging" :bg="iconSentence" bg-size="cover" bg-position="center" bg-opacity="0.3" />
             <ButtonCard label="Picture Word Matching" to="/image-labelling" :bg="iconMatch" bg-size="cover" bg-position="center" bg-opacity="0.3" />
-            <ButtonCard label="coming soon" :bg="iconSoon" bg-size="cover" bg-position="center" bg-opacity="0.3" />
+            <ButtonCard label="Reading Speed Test" to="/reading-speed" :bg="iconSoon" bg-size="cover" bg-position="center" bg-opacity="0.3" />
           </div>
         </div>
       </section>
