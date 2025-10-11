@@ -470,12 +470,15 @@ onMounted(() => {
   <div class="page-container">
     <GameTopBar title="Reading Practice" />
     <WaveHeader top="80px" height="200px" zIndex="0" />
-    <GameTitleNDescribe
-      title="Reading Practice"
-      description="Read the text aloud and watch the words highlight as you go!"
-    />
 
-
+    <!-- - Wrap this component -->
+    <div class="title-wrapper">
+      <GameTitleNDescribe
+        title="Reading Practice"
+        description="Read the text aloud and watch the words highlight as you go!"
+      />
+    </div>
+    
     <div class="content-wrapper">
       <div class="control-buttons">
         <button 
@@ -621,25 +624,6 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Completion Message -->
-      <div v-if="isComplete && !loading" class="completion-message">
-        <div class="completion-title">🎉 Congratulations! 🎉</div>
-        <div class="completion-subtitle">You've completed the reading!</div>
-        <div class="completion-stats">
-          <div class="completion-stat">
-            <div class="completion-stat-label">Final WPM</div>
-            <div class="completion-stat-value">{{ finalWPM }}</div>
-          </div>
-          <div class="completion-stat">
-            <div class="completion-stat-label">Total Time</div>
-            <div class="completion-stat-value">{{ formattedTime }}</div>
-          </div>
-          <div class="completion-stat">
-            <div class="completion-stat-label">Words Read</div>
-            <div class="completion-stat-value">{{ words.length }}</div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
