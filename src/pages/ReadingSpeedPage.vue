@@ -4,6 +4,7 @@ import GameTopBar from '@/components/GameTopBar.vue'
 import WaveHeader from '@/components/WaveHeader.vue'
 import GameTitleNDescribe from '@/components/GameTitleNDescribe.vue'
 import '@/assets/readingSpeed.css'
+import { apiPost } from '@/utils/api'
 
 const currentContent = ref('')
 const loading = ref(true)
@@ -62,39 +63,15 @@ watch([currentWordIndex, isReading, isPaused], () => {
 })
 
 async function fetchContent() {
+  loading.value = true
   try {
-    loading.value = true
-    errorMsg.value = ''
-
-    // Prepare request payload
-    const payload = { level: selectedLevel.value }
-
-    const res = await fetch(`${import.meta.env.VITE_API_BASE}/reading_speed`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    })
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-
-    const data = await res.json()
-    if (data.status !== 'success' || !data.data) {
-      throw new Error('Invalid response format')
-    }
-
-    // Extract text and word count
+    const data = await apiPost('/reading_speed', { level: selectedLevel.value })
     const { text, word_count } = data.data
-
     currentContent.value = text
     wordCount.value = word_count
-
-    // Split text into words for highlighting (no counting logic here)
     words.value = text.split(' ').map(w => w.trim()).filter(w => w.length > 0)
-
   } catch (e) {
-    console.error('Fetch error:', e)
+    console.error(e)
     errorMsg.value = 'Failed to load reading content.'
   } finally {
     loading.value = false
