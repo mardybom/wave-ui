@@ -22,7 +22,7 @@ const hintTimer = ref(null)
 const lastWordTime = ref(Date.now())
 const showInstructions = ref(false) 
 const wordCount = ref(0)
-
+const isNextAvailable = ref(false)
 
 // WPM tracking
 const startTime = ref(0)
@@ -283,10 +283,8 @@ function handleComplete() {
     finalWPM.value = Math.round(words.value.length / minutes)
   }
   
-  // Stop timer
   pauseTimer()
   
-  // Clear hint timer
   if (hintTimer.value) {
     clearTimeout(hintTimer.value)
     hintTimer.value = null
@@ -296,16 +294,18 @@ function handleComplete() {
     recognition.value.stop()
   }
   
-  // Cancel any ongoing speech
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel()
   }
-  
-  // Show completion message with WPM
+
+  //NEW — enable Next button
+  isNextAvailable.value = true
+
   setTimeout(() => {
     alert(`🎉 Great job! You completed the reading!\n\n📊 Your reading speed: ${finalWPM.value} WPM\n⏱️ Time taken: ${formattedTime.value}`)
   }, 500)
 }
+
 
 function handleStartReading() {
   if (!recognition.value) {
@@ -408,6 +408,25 @@ function handleStop() {
   }
 }
 
+async function handleNext() {
+  // Reset all progress
+  currentWordIndex.value = 0
+  transcript.value = ''
+  wrongAttempts.value = 0
+  resetTimer()
+  isNextAvailable.value = false
+  finalWPM.value = 0
+  isReading.value = false
+  isPaused.value = false
+
+  // Fetch new content for the same level
+  await fetchContent()
+
+  // Optional: auto-start reading again
+  // handleStartReading()
+}
+
+
 function toggleDropdown() {
   isDropdownOpen.value = !isDropdownOpen.value
 }
@@ -473,13 +492,16 @@ onMounted(() => {
         >
           <span class="icon">{{ isPaused ? '▶' : '⏸' }}</span> {{ isPaused ? 'Continue' : 'Pause' }}
         </button>
-        <button 
-          class="btn btn-stop" 
-          @click="handleStop"
-        >
-          <span class="icon">⏹</span> Stop Reading
-        </button>
         
+        <button 
+          class="btn"
+          :class="isNextAvailable ? 'btn-next' : 'btn-stop'"
+          @click="isNextAvailable ? handleNext() : handleStop()"
+        >
+          <span class="icon">{{ isNextAvailable ? '➡️' : '⏹' }}</span>
+          {{ isNextAvailable ? 'Next' : 'Stop Reading' }}
+        </button>
+
         <!-- Custom Dropdown -->
         <div class="custom-dropdown">
           <button 

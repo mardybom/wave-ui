@@ -512,3 +512,14 @@
     transform: translateY(0);
   }
 }
+
+/* Next Button Styling */
+.btn-next {
+  background: #2196f3;
+}
+
+.btn-next:hover:not(:disabled) {
+  background: #1976d2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
