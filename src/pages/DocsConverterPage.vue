@@ -105,7 +105,6 @@ const processImage = async (file) => {
       throw new Error('No text found in the image')
     }
     
-    extractedText.value = text
     currentFileName.value = file.name.replace(/\.[^/.]+$/, '') + '-opendyslexic.pdf'
     
     // Create PDF with extracted text
@@ -188,7 +187,6 @@ const processPDF = async (file) => {
     statusMessage.value = 'Generating new PDF with OpenDyslexic font...'
     progress.value = 85
     
-    extractedText.value = fullText.trim()
     currentFileName.value = file.name.replace(/\.[^/.]+$/, '') + '-opendyslexic.pdf'
     
     // Create new PDF with OpenDyslexic font
@@ -227,6 +225,8 @@ const triggerFileInput = () => {
 const prepareTextForSpeech = (text) => {
   // Split text into words, preserving punctuation
   words.value = text.match(/\S+/g) || []
+  // Normalize extractedText to match how words are split (single spaces only)
+  extractedText.value = words.value.join(' ')
   currentWordIndex.value = -1
 }
 
