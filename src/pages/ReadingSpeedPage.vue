@@ -21,6 +21,8 @@ const wrongAttempts = ref(0)
 const hintTimer = ref(null)
 const lastWordTime = ref(Date.now())
 const showInstructions = ref(false) 
+const wordCount = ref(0)
+const isNextAvailable = ref(false)
 
 // WPM tracking
 const startTime = ref(0)
@@ -62,36 +64,43 @@ watch([currentWordIndex, isReading, isPaused], () => {
 async function fetchContent() {
   try {
     loading.value = true
-    
-    // HARDCODED STRING - Replace with your text
-    currentContent.value = `With your consent we can show you content that truly matches your apple`
-    
-    // Split content into words
-    words.value = currentContent.value.split(' ').map(word => word.trim()).filter(word => word.length > 0)
-    
-    loading.value = false
-    
-    // Comment out the actual API call for now
-    /*
-    const res = await fetch(API, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+    errorMsg.value = ''
+
+    // Prepare request payload
+    const payload = { level: selectedLevel.value }
+
+    const res = await fetch(`${import.meta.env.VITE_API_BASE}/reading_speed`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
     })
+
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
     const data = await res.json()
-    contentList.value = data.data || []
-    if (contentList.value.length > 0) {
-      currentContent.value = contentList.value[0].text
-      words.value = currentContent.value.split(' ')
-      currentWordIndex.value = 0
+    if (data.status !== 'success' || !data.data) {
+      throw new Error('Invalid response format')
     }
-    */
+
+    // Extract text and word count
+    const { text, word_count } = data.data
+
+    currentContent.value = text
+    wordCount.value = word_count
+
+    // Split text into words for highlighting (no counting logic here)
+    words.value = text.split(' ').map(w => w.trim()).filter(w => w.length > 0)
+
   } catch (e) {
-    console.error(e)
-    errorMsg.value = 'Failed to load content.'
+    console.error('Fetch error:', e)
+    errorMsg.value = 'Failed to load reading content.'
+  } finally {
     loading.value = false
   }
 }
+
 
 function startTimer() {
   startTime.value = Date.now() - (elapsedTime.value * 1000)
@@ -274,10 +283,8 @@ function handleComplete() {
     finalWPM.value = Math.round(words.value.length / minutes)
   }
   
-  // Stop timer
   pauseTimer()
   
-  // Clear hint timer
   if (hintTimer.value) {
     clearTimeout(hintTimer.value)
     hintTimer.value = null
@@ -287,16 +294,18 @@ function handleComplete() {
     recognition.value.stop()
   }
   
-  // Cancel any ongoing speech
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel()
   }
-  
-  // Show completion message with WPM
+
+  //NEW — enable Next button
+  isNextAvailable.value = true
+
   setTimeout(() => {
     alert(`🎉 Great job! You completed the reading!\n\n📊 Your reading speed: ${finalWPM.value} WPM\n⏱️ Time taken: ${formattedTime.value}`)
   }, 500)
 }
+
 
 function handleStartReading() {
   if (!recognition.value) {
@@ -399,6 +408,25 @@ function handleStop() {
   }
 }
 
+async function handleNext() {
+  // Reset all progress
+  currentWordIndex.value = 0
+  transcript.value = ''
+  wrongAttempts.value = 0
+  resetTimer()
+  isNextAvailable.value = false
+  finalWPM.value = 0
+  isReading.value = false
+  isPaused.value = false
+
+  // Fetch new content for the same level
+  await fetchContent()
+
+  // Optional: auto-start reading again
+  // handleStartReading()
+}
+
+
 function toggleDropdown() {
   isDropdownOpen.value = !isDropdownOpen.value
 }
@@ -442,11 +470,15 @@ onMounted(() => {
   <div class="page-container">
     <GameTopBar title="Reading Practice" />
     <WaveHeader top="80px" height="200px" zIndex="0" />
-    <GameTitleNDescribe
-      title="Reading Practice"
-      description="Read the text aloud and watch the words highlight as you go!"
-    />
 
+    <!-- - Wrap this component -->
+    <div class="title-wrapper">
+      <GameTitleNDescribe
+        title="Reading Practice"
+        description="Read the text aloud and watch the words highlight as you go!"
+      />
+    </div>
+    
     <div class="content-wrapper">
       <div class="control-buttons">
         <button 
@@ -463,13 +495,16 @@ onMounted(() => {
         >
           <span class="icon">{{ isPaused ? '▶' : '⏸' }}</span> {{ isPaused ? 'Continue' : 'Pause' }}
         </button>
-        <button 
-          class="btn btn-stop" 
-          @click="handleStop"
-        >
-          <span class="icon">⏹</span> Stop Reading
-        </button>
         
+        <button 
+          class="btn"
+          :class="isNextAvailable ? 'btn-next' : 'btn-stop'"
+          @click="isNextAvailable ? handleNext() : handleStop()"
+        >
+          <span class="icon">{{ isNextAvailable ? '➡️' : '⏹' }}</span>
+          {{ isNextAvailable ? 'Next' : 'Stop Reading' }}
+        </button>
+
         <!-- Custom Dropdown -->
         <div class="custom-dropdown">
           <button 
@@ -589,25 +624,6 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Completion Message -->
-      <div v-if="isComplete && !loading" class="completion-message">
-        <div class="completion-title">🎉 Congratulations! 🎉</div>
-        <div class="completion-subtitle">You've completed the reading!</div>
-        <div class="completion-stats">
-          <div class="completion-stat">
-            <div class="completion-stat-label">Final WPM</div>
-            <div class="completion-stat-value">{{ finalWPM }}</div>
-          </div>
-          <div class="completion-stat">
-            <div class="completion-stat-label">Total Time</div>
-            <div class="completion-stat-value">{{ formattedTime }}</div>
-          </div>
-          <div class="completion-stat">
-            <div class="completion-stat-label">Words Read</div>
-            <div class="completion-stat-value">{{ words.length }}</div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
