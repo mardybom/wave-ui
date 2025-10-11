@@ -7,6 +7,7 @@ import DigitalWritingPage from '@/pages/DigitalWritingPage.vue'
 import SentenceRearrangingPage from '@/pages/SentenceRearrangingPage.vue'
 import ImageLabellingPage from '@/pages/ImageLabellingPage.vue'
 import DocsConverterPage from '@/pages/DocsConverterPage.vue'
+import ReadingSpeedPage from '@/pages/ReadingSpeedPage.vue'
 
 
 
@@ -22,6 +23,7 @@ const routes = [
   { path: '/sentence-rearranging', name: 'SentenceRearranging', component: SentenceRearrangingPage },
   { path: '/image-labelling', name: 'ImageLabelling', component: ImageLabellingPage },
   { path: '/docs-converter', name: 'docsConverter', component: DocsConverterPage },
+  { path: '/reading-speed', name: 'ReadingSpeed', component:  ReadingSpeedPage},
   // iteration1
   { 
     path: '/iteration1',
