@@ -17,6 +17,8 @@ import ParentsFaqMyths from '@/components/ParentsHub/myths.vue'
 import ChatBot from '@/components/ChatBot.vue'
 import { ref } from 'vue'
 import { apiPost } from '@/utils/api'  //  use the shared API helper
+import Copyright from '@/components/Copyright.vue'
+
 
 const isChatOpen = ref(false)
 
@@ -101,6 +103,7 @@ async function handleSend(text) {
     ]"
     :onSend="handleSend"
   />
+  <Copyright />
 </template>
 
 <style scoped>

@@ -7,6 +7,8 @@ import iconWriting from '@/assets/digital_writing_bg.png'
 import iconSentence from '@/assets/sentence_bg.png'
 import iconMatch from '@/assets/picture_word_bg.png'
 import iconSoon from '@/assets/letter_sound_mapping_bg.png'
+import Copyright from '@/components/Copyright.vue'
+
 </script>
 
 <template>
@@ -43,6 +45,7 @@ import iconSoon from '@/assets/letter_sound_mapping_bg.png'
 
       <img src="@/assets/squirrel_1.png" alt="Squirrel mascot" class="mascot" />
     </main>
+    <Copyright />
   </div>
 </template>
 
