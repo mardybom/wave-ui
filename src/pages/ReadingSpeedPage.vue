@@ -31,15 +31,15 @@ const elapsedTime = ref(0)
 const timerInterval = ref(null)
 const finalWPM = ref(0)
 
-// const API = `${import.meta.env.VITE_API_CONTENT}/consent/list`
-const API = `${import.meta.env.VITE_API_SENTENCE}/sentence/next`
 
 const levels = [
   { value: 'Easy', label: 'Easy', icon: '🌱' },
   { value: 'Medium', label: 'Medium', icon: '🌿' },
   { value: 'Hard', label: 'Hard', icon: '🌳' },
-  { value: 'Extremely hard', label: 'Extremely hard', icon: '🔥' }
+  { value: 'Extreme', label: 'Extreme', icon: '🔥' }
 ]
+
+console.log('Requested level:', selectedLevel.value)
 
 const isComplete = computed(() => {
   return currentWordIndex.value >= words.value.length
