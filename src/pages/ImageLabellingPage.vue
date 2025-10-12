@@ -8,6 +8,8 @@ import elleImage from '@/assets/hibby_1.png'
 import successVideoSrc from '@/assets/hibby_success.mp4'
 import { apiPost } from '@/utils/api'
 
+import ScreenSizeWarning from '@/components/ScreenSizeWarning.vue'
+
 const pic = ref(null)
 const options = ref([])
 const showSuccessModal = ref(false)
@@ -28,7 +30,7 @@ async function fetchQuestion() {
     showSuccessModal.value = false
     clearTimeout(modalTimer)
 
-    // ✅ Use shared helper — automatically adds auth + base URL
+    // Use shared helper — automatically adds auth + base URL
     const data = await apiPost('/image_labeling/next', {})
 
     const mime = guessMimeFromBase64(data.data.image_base64)
@@ -78,6 +80,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <ScreenSizeWarning />
   <div class="page-container">
     <GameTopBar title="ImageLabellingPage" />
     <WaveHeader top="80px" height="200px" zIndex="0"/>
@@ -123,6 +126,7 @@ onBeforeUnmount(() => {
   min-height: 50vh;
   width: 100vw;
   position: relative;
+  background-color: #fdf8ea;
 }
 
 .bossWrapper {

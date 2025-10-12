@@ -6,6 +6,9 @@ import WaveHeader from '@/components/WaveHeader.vue'
 import GameTitleNDescribe from '@/components/GameTitleNDescribe.vue'
 import { apiPost } from '@/utils/api'
 
+import ScreenSizeWarning from '@/components/ScreenSizeWarning.vue'
+
+
 const correctWords = ref([])
 const shuffledWords = ref([])
 const loading = ref(true)
@@ -43,6 +46,7 @@ onMounted(() => fetchSentence('Easy'))
 </script>
 
 <template>
+  <ScreenSizeWarning />
   <div class="page-container">
     <GameTopBar title="Sentence Rearranging" />
     <WaveHeader top="80px" height="200px" zIndex="0" />
@@ -79,6 +83,7 @@ onMounted(() => fetchSentence('Easy'))
   min-height: 100vh;
   width: 100vw;
   position: relative;
+  background-color: #fdf8ea;
 }
 
 /* Grid: elephant (left) | game (right) */

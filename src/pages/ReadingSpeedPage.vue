@@ -603,3 +603,10 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.page-container {
+  background-color: #fdf8ea;
+}
+
+</style>

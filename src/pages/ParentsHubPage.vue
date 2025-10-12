@@ -102,7 +102,10 @@ async function handleSend(text) {
   </div>
 
   <!-- 家长常见误区 / FAQ 模块 -->
-  <ParentsFaqMyths />
+  <div class="faq-wrapper">
+    <ParentsFaqMyths />
+  </div>
+
 
   <!-- 聊天机器人 -->
   <ChatBot
@@ -115,6 +118,13 @@ async function handleSend(text) {
 </template>
 
 <style scoped>
+.faq-wrapper {
+  width: 100vw;
+  max-width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
 .sky{
   position: absolute;
   top: var(--nav-h);
@@ -132,4 +142,11 @@ async function handleSend(text) {
   height: 50%;
 }
 .sc-launcher { position: fixed !important; z-index: 99999 !important; }
+
+@media (max-width: 720px) {
+  .faq-wrapper {
+    transform: scale(0.8);           /* 整体缩小为90% */
+    transform-origin: top center;    /* 从上方向中间缩放 */
+  }
+}
 </style>
