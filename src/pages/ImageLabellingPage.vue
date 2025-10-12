@@ -6,8 +6,7 @@ import GameTitleNDescribe from '@/components/GameTitleNDescribe.vue'
 import ImageChoiceCard from '@/components/PictureWordMatchingPage/ImageChoiceCard.vue'
 import elleImage from '@/assets/hibby_1.png'
 import successVideoSrc from '@/assets/hibby_success.mp4'
-
-const API = import.meta.env.VITE_API_IMAGE_LABELING
+import { apiPost } from '@/utils/api'
 
 const pic = ref(null)
 const options = ref([])
@@ -29,28 +28,24 @@ async function fetchQuestion() {
     showSuccessModal.value = false
     clearTimeout(modalTimer)
 
-    const res = await fetch(API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
-    })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const json = await res.json()
-    const data = json?.data ?? {}
+    // ✅ Use shared helper — automatically adds auth + base URL
+    const data = await apiPost('/image_labeling/next', {})
 
-    const mime = guessMimeFromBase64(data.image_base64)
-    pic.value = `data:${mime};base64,${data.image_base64}`
+    const mime = guessMimeFromBase64(data.data.image_base64)
+    pic.value = `data:${mime};base64,${data.data.image_base64}`
 
-    const label = data.image_label
-    options.value = (data.options || []).map(text => ({
+    const label = data.data.image_label
+    options.value = (data.data.options || []).map(text => ({
       text,
       isCorrect: text === label,
     }))
-  } catch {
+  } catch (e) {
+    console.error('Image labeling fetch error:', e)
     options.value = []
     pic.value = null
   }
 }
+
 
 function handleAnswered(isCorrect) {
   if (isCorrect) {
