@@ -24,6 +24,11 @@ const lastWordTime = ref(Date.now())
 const showInstructions = ref(false) 
 const wordCount = ref(0)
 const isNextAvailable = ref(false)
+const showResultModal = ref(false)
+const resultStats = ref({
+  wpm: 0,
+  time: '',
+})
 
 // WPM tracking
 const startTime = ref(0)
@@ -278,8 +283,13 @@ function handleComplete() {
   isNextAvailable.value = true
 
   setTimeout(() => {
-    alert(`🎉 Great job! You completed the reading!\n\n📊 Your reading speed: ${finalWPM.value} WPM\n⏱️ Time taken: ${formattedTime.value}`)
+    resultStats.value = {
+      wpm: finalWPM.value,
+      time: formattedTime.value
+    }
+    showResultModal.value = true
   }, 500)
+
 }
 
 
@@ -385,23 +395,20 @@ function handleStop() {
 }
 
 async function handleNext() {
+  isNextAvailable.value = false
+  loading.value = true
   // Reset all progress
   currentWordIndex.value = 0
   transcript.value = ''
   wrongAttempts.value = 0
   resetTimer()
-  isNextAvailable.value = false
   finalWPM.value = 0
   isReading.value = false
   isPaused.value = false
 
-  // Fetch new content for the same level
   await fetchContent()
-
-  // Optional: auto-start reading again
-  // handleStartReading()
+  loading.value = false
 }
-
 
 function toggleDropdown() {
   isDropdownOpen.value = !isDropdownOpen.value
@@ -472,14 +479,23 @@ onMounted(() => {
           <span class="icon">{{ isPaused ? '▶' : '⏸' }}</span> {{ isPaused ? 'Continue' : 'Pause' }}
         </button>
         
+        <!-- Stop Reading Button (always visible) -->
         <button 
-          class="btn"
-          :class="isNextAvailable ? 'btn-next' : 'btn-stop'"
-          @click="isNextAvailable ? handleNext() : handleStop()"
+          class="btn btn-stop"
+          @click="handleStop"
+          :disabled="!isReading && !isPaused && !isComplete"
         >
-          <span class="icon">{{ isNextAvailable ? '➡️' : '⏹' }}</span>
-          {{ isNextAvailable ? 'Next' : 'Stop Reading' }}
+          <span class="icon">⏹</span> Stop Reading
         </button>
+
+        <!-- Next Button (always visible, but only active when complete) -->
+        <button 
+          class="btn btn-next"
+          @click="handleNext"
+        >
+          <span class="icon">➡️</span> Next
+        </button>
+
 
         <!-- Custom Dropdown -->
         <div class="custom-dropdown">
@@ -601,12 +617,116 @@ onMounted(() => {
       </div>
 
     </div>
+    <!-- Result Popup Modal -->
+    <div v-if="showResultModal" class="modal-backdrop" @click.self="showResultModal = false">
+      <div class="modal-card">
+        <button class="modal-close" @click="showResultModal = false">×</button>
+        <h2 class="modal-title">🎉 Great job!</h2>
+        <p class="modal-text">You completed the reading session.</p>
+        <div class="stats-box">
+          <p><strong>📊 Words Per Minute (WPM):</strong> {{ resultStats.wpm }}</p>
+          <p><strong>⏱️ Time Taken:</strong> {{ resultStats.time }}</p>
+        </div>
+        <button class="btn-modal" @click="showResultModal = false">OK</button>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <style scoped>
 .page-container {
   background-color: #fdf8ea;
+}
+
+/* --- Result Modal (larger, more prominent) --- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 9999;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 50px 60px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  max-width: 650px;       /* Increased width */
+  width: 90%;
+  position: relative;
+  animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-title {
+  font-size: 2.2rem;       /* Bigger title */
+  margin-bottom: 20px;
+  color: #333;
+  font-weight: 700;
+}
+
+.modal-text {
+  color: #555;
+  margin-bottom: 25px;
+  font-size: 1.2rem;
+  line-height: 1.8;
+}
+
+.stats-box {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 25px 30px;      /* More breathing room */
+  margin-bottom: 30px;
+  line-height: 1.8;
+  font-size: 1.1rem;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 28px;         /* Bigger close icon */
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+}
+
+.modal-close:hover {
+  color: #000;
+}
+
+.btn-modal {
+  background: #4CAF50;
+  color: #fff;
+  border: none;
+  padding: 14px 35px;      /* Bigger button */
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-modal:hover {
+  background: #45a049;
+  transform: translateY(-2px);
 }
 
 </style>
