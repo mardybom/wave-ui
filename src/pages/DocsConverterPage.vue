@@ -2,6 +2,8 @@
 import { ref, onMounted } from 'vue'
 import NavBar from '@/components/NavBar.vue'
 import WaveHeader from '@/components/WaveHeader.vue'
+import Copyright from '@/components/Copyright.vue'
+
 
 const fileInput = ref(null)
 const isProcessing = ref(false)
@@ -323,6 +325,7 @@ const toggleInstructions = () => {
 </script>
 
 <template>
+  <div class="page">
   <NavBar />
 
   <WaveHeader />
@@ -477,9 +480,21 @@ const toggleInstructions = () => {
       </div>
     </div>
   </div>
+  <Copyright />
+</div>
 </template>
 
 <style scoped>
+.page {
+  display: flex;               /* 建立垂直方向的 Flex 容器 */
+  flex-direction: column;      /* 元素从上到下排列 */
+  min-height: 100vh;           /* 页面至少占满视口高度 */
+}
+
+.page > :last-child {
+  margin-top: auto;            /* 把最后一个元素（比如 Copyright）推到底部 */
+}
+
 .container {
   max-width: 900px;
   margin: 0 auto;
