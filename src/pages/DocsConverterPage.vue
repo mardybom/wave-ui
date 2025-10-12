@@ -327,7 +327,7 @@ const toggleInstructions = () => {
 
   <WaveHeader />
   
-  <div class="container">
+  <div class="container" v-cloak>
     <div class="upload-section">
       <h1>PDF & Image to OpenDyslexic Converter</h1>
       <p class="description">
@@ -390,7 +390,7 @@ const toggleInstructions = () => {
         {{ isProcessing ? 'Processing...' : 'Upload PDF or Image' }}
       </button>
       
-      <div class="font-size-control">
+      <div v-if="extractedText" class="font-size-control">
         <label for="font-size-slider">Font Size: {{ fontSize }}px</label>
         <input
           id="font-size-slider"
@@ -767,6 +767,11 @@ h1 {
 .font-size-control {
   margin: 16px 0 24px;
   text-align: center;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+[v-cloak] .font-size-control {
+  opacity: 0;
 }
 
 .font-size-control label {
