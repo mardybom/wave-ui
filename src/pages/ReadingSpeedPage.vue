@@ -78,7 +78,6 @@ async function fetchContent() {
   }
 }
 
-
 function startTimer() {
   startTime.value = Date.now() - (elapsedTime.value * 1000)
   timerInterval.value = setInterval(() => {
