@@ -7,11 +7,12 @@
 
 .control-buttons {
   display: flex;
-  gap: 16px;
-  justify-content: center;
-  margin-bottom: 40px;
   flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
 }
+
 
 .btn {
   padding: 16px 32px;

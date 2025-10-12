@@ -395,23 +395,20 @@ function handleStop() {
 }
 
 async function handleNext() {
+  isNextAvailable.value = false
+  loading.value = true
   // Reset all progress
   currentWordIndex.value = 0
   transcript.value = ''
   wrongAttempts.value = 0
   resetTimer()
-  isNextAvailable.value = false
   finalWPM.value = 0
   isReading.value = false
   isPaused.value = false
 
-  // Fetch new content for the same level
   await fetchContent()
-
-  // Optional: auto-start reading again
-  // handleStartReading()
+  loading.value = false
 }
-
 
 function toggleDropdown() {
   isDropdownOpen.value = !isDropdownOpen.value
@@ -482,14 +479,23 @@ onMounted(() => {
           <span class="icon">{{ isPaused ? '▶' : '⏸' }}</span> {{ isPaused ? 'Continue' : 'Pause' }}
         </button>
         
+        <!-- Stop Reading Button (always visible) -->
         <button 
-          class="btn"
-          :class="isNextAvailable ? 'btn-next' : 'btn-stop'"
-          @click="isNextAvailable ? handleNext() : handleStop()"
+          class="btn btn-stop"
+          @click="handleStop"
+          :disabled="!isReading && !isPaused && !isComplete"
         >
-          <span class="icon">{{ isNextAvailable ? '➡️' : '⏹' }}</span>
-          {{ isNextAvailable ? 'Next' : 'Stop Reading' }}
+          <span class="icon">⏹</span> Stop Reading
         </button>
+
+        <!-- Next Button (always visible, but only active when complete) -->
+        <button 
+          class="btn btn-next"
+          @click="handleNext"
+        >
+          <span class="icon">➡️</span> Next
+        </button>
+
 
         <!-- Custom Dropdown -->
         <div class="custom-dropdown">
