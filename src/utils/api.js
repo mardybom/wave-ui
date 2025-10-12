@@ -3,6 +3,7 @@ export async function apiPost(endpoint, data) {
   const password = import.meta.env.VITE_ADMIN_PASSWORD
   const authHeader = 'Basic ' + btoa(`${username}:${password}`)
 
+  
   const res = await fetch(`${import.meta.env.VITE_API_BASE}${endpoint}`, {
     method: 'POST',
     headers: {
