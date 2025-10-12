@@ -1,9 +1,10 @@
 <script setup>
 import { ref, reactive, computed, watch, nextTick, onBeforeUnmount, onMounted } from 'vue'
-import axios from 'axios'
 import GameTopBar from '@/components/GameTopBar.vue'
 import DrawingPad from '@/components/DigitalWritingPage/DrawingPad.vue'
 import UpperPart from '@/components/DigitalWritingPage/UpperPart.vue'
+import { apiPost } from '@/utils/api'
+
 
 import falseImg from '@/assets/hibby_feedback.png'
 import successVideoSrc from '@/assets/hibby_success.mp4'
@@ -373,10 +374,11 @@ const captureAndBuildJson = async () => {
       level: level.value
     }
 
-    const res = await axios.post('https://wave-api-monashie.azurewebsites.net/alphabet_mastery', payload, { headers: { 'Content-Type': 'application/json' } })
+    // ✅ Use shared helper for secure API call
+    const data = await apiPost('/alphabet_mastery', payload)
 
-    isCorrect.value = res.data.is_correct
-    detectedCount.value = res.data.detected_count
+    isCorrect.value = data.is_correct
+    detectedCount.value = data.detected_count
     childResponded.value = true
     stopPromptCycle()
 
@@ -397,6 +399,7 @@ const captureAndBuildJson = async () => {
     isChecking.value = false
   }
 }
+
 
 const goNext = async () => {
   clearCanvas()
