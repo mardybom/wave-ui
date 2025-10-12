@@ -15,6 +15,12 @@ function onStarted() {
   /* timer removed—no-op is fine */
 }
 
+onMounted(() => {
+  console.log("API Base:", import.meta.env.VITE_API_BASE)
+  console.log("Username:", import.meta.env.VITE_ADMIN_USERNAME)
+  console.log("Password exists:", !!import.meta.env.VITE_ADMIN_PASSWORD)
+})
+
 const API = `${import.meta.env.VITE_API_SENTENCE}/sentence/next`
 
 async function fetchSentence(level = currentLevel.value) {
