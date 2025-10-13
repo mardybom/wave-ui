@@ -5,6 +5,7 @@ import WaveHeader from '@/components/WaveHeader.vue'
 import GameTitleNDescribe from '@/components/GameTitleNDescribe.vue'
 import { apiPost } from '@/utils/api'
 
+// -------------------- State --------------------
 const currentContent = ref('')
 const loading = ref(true)
 const errorMsg = ref('')
@@ -20,21 +21,18 @@ const words = ref([])
 const wrongAttempts = ref(0)
 const hintTimer = ref(null)
 const lastWordTime = ref(Date.now())
-const showInstructions = ref(false) 
+const showInstructions = ref(false)
 const wordCount = ref(0)
 const isNextAvailable = ref(false)
 const showResultModal = ref(false)
-const resultStats = ref({
-  wpm: 0,
-  time: '',
-})
+const resultStats = ref({ wpm: 0, time: '' })
+const locale = ref(localStorage.getItem('reading_locale') || 'en-AU')
 
 // WPM tracking
 const startTime = ref(0)
 const elapsedTime = ref(0)
 const timerInterval = ref(null)
 const finalWPM = ref(0)
-
 
 const levels = [
   { value: 'Easy', label: 'Easy', icon: '🌱' },
@@ -43,11 +41,7 @@ const levels = [
   { value: 'Extreme', label: 'Extreme', icon: '🔥' }
 ]
 
-console.log('Requested level:', selectedLevel.value)
-
-const isComplete = computed(() => {
-  return currentWordIndex.value >= words.value.length
-})
+const isComplete = computed(() => currentWordIndex.value >= words.value.length)
 
 const currentWPM = computed(() => {
   if (elapsedTime.value === 0 || currentWordIndex.value === 0) return 0
@@ -66,6 +60,7 @@ watch([currentWordIndex, isReading, isPaused], () => {
   resetHintTimer()
 })
 
+// -------------------- Content (API) + Grammar --------------------
 async function fetchContent() {
   loading.value = true
   try {
@@ -73,7 +68,13 @@ async function fetchContent() {
     const { text, word_count } = data.data
     currentContent.value = text
     wordCount.value = word_count
-    words.value = text.split(' ').map(w => w.trim()).filter(w => w.length > 0)
+    words.value = text
+      .split(/\s+/)
+      .map((w) => w.trim())
+      .filter((w) => w.length > 0)
+
+    // After words are set, bias ASR toward them
+    applyGrammar(words.value)
   } catch (e) {
     console.error(e)
     errorMsg.value = 'Failed to load reading content.'
@@ -82,11 +83,29 @@ async function fetchContent() {
   }
 }
 
+function applyGrammar(wordsArr) {
+  if (!recognition.value) return
+  const SRGL = window.SpeechGrammarList || window.webkitSpeechGrammarList
+  if (!SRGL) return
+  try {
+    const grammarList = new SRGL()
+    const uniq = Array.from(new Set(wordsArr.map((w) => normalizeWord(w)).filter(Boolean)))
+    if (uniq.length === 0) return
+    const jsgf = `#JSGF V1.0; grammar words; public <word> = ${uniq.join(' | ')} ;`
+    grammarList.addFromString(jsgf, 1.0)
+    recognition.value.grammars = grammarList
+    recognition.value.maxAlternatives = 5
+  } catch (err) {
+    console.debug('Grammar apply failed', err)
+  }
+}
+
+// -------------------- Timer --------------------
 function startTimer() {
-  startTime.value = Date.now() - (elapsedTime.value * 1000)
+  startTime.value = Date.now() - elapsedTime.value * 1000
   timerInterval.value = setInterval(() => {
     elapsedTime.value = (Date.now() - startTime.value) / 1000
-  }, 100) // Update every 100ms for smooth display
+  }, 100)
 }
 
 function pauseTimer() {
@@ -103,267 +122,193 @@ function resetTimer() {
   finalWPM.value = 0
 }
 
-function toggleInstructions() {
-  showInstructions.value = !showInstructions.value
+// -------------------- UI helpers --------------------
+function toggleInstructions() { showInstructions.value = !showInstructions.value }
+function toggleDropdown() { isDropdownOpen.value = !isDropdownOpen.value }
+function selectLevel(level) { selectedLevel.value = level; isDropdownOpen.value = false; handleStop(); fetchContent() }
+function getCurrentLevelIcon() { const l = levels.find((x) => x.value === selectedLevel.value); return l ? l.icon : '🌱' }
+function getWordClass(index) {
+  if (isComplete.value) return 'word-completed'
+  if (index < currentWordIndex.value) return 'word-completed'
+  if (index === currentWordIndex.value) return 'word-current'
+  return 'word-pending'
 }
 
+// -------------------- ASR init --------------------
 function initSpeechRecognition() {
   if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
     errorMsg.value = 'Speech recognition is not supported in your browser. Please use Chrome or Edge.'
     return false
   }
-
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-  recognition.value = new SpeechRecognition()
-  recognition.value.continuous = true
-  recognition.value.interimResults = true
-  recognition.value.lang = 'en-US'
+  const sr = new SpeechRecognition()
+  sr.continuous = true
+  sr.interimResults = true
+  sr.lang = locale.value // default AU; adjust if you expose a setting
+  sr.maxAlternatives = 5
 
-  recognition.value.onresult = (event) => {
+  sr.onresult = (event) => {
     let interimTranscript = ''
-    let finalTranscript = ''
-
+    let finalTranscriptPart = ''
     for (let i = event.resultIndex; i < event.results.length; i++) {
-      const transcriptPiece = event.results[i][0].transcript
-      if (event.results[i].isFinal) {
-        finalTranscript += transcriptPiece
-      } else {
-        interimTranscript += transcriptPiece
-      }
+      const res = event.results[i]
+      const best = res[0]?.transcript || ''
+      if (res.isFinal) finalTranscriptPart += best + ' '
+      else interimTranscript += best + ' '
     }
+    const combined = (finalTranscriptPart + interimTranscript).trim()
+    transcript.value = combined
 
-    transcript.value = (finalTranscript + interimTranscript).trim()
-    
-    // Reset hint timer when user speaks
-    if (transcript.value.length > 0) {
+    if (combined.length > 0) {
       lastWordTime.value = Date.now()
       resetHintTimer()
     }
-    
-    checkWord(transcript.value)
+
+    const recentTokens = combined.toLowerCase().split(/\s+/).slice(-4)
+    checkWordCandidates(recentTokens, event)
   }
 
-  recognition.value.onerror = (event) => {
+  sr.onerror = (event) => {
     console.error('Speech recognition error:', event.error)
     if (event.error === 'no-speech') {
-      // Restart recognition if no speech detected
-      if (isReading.value && !isPaused.value) {
-        recognition.value.start()
-      }
+      if (isReading.value && !isPaused.value) sr.start()
     }
   }
 
-  recognition.value.onend = () => {
+  sr.onend = () => {
     if (isReading.value && !isPaused.value && !isComplete.value) {
-      // Restart recognition if still reading
-      try {
-        recognition.value.start()
-      } catch (e) {
-        console.log('Recognition restart failed:', e)
-      }
+      try { sr.start() } catch (e) { console.log('Recognition restart failed:', e) }
     }
   }
 
+  recognition.value = sr
   return true
 }
 
-function resetHintTimer() {
-  // Clear existing timer
-  if (hintTimer.value) {
-    clearTimeout(hintTimer.value)
-    hintTimer.value = null
-  }
-
-  // Set new timer only if reading and not paused
-  if (isReading.value && !isPaused.value && !isComplete.value) {
-    hintTimer.value = setTimeout(() => {
-      speakHint()
-    }, 5000) // 5 seconds
-  }
-}
-
-function speakHint() {
-  if (currentWordIndex.value >= words.value.length || !isReading.value || isPaused.value) {
-    return
-  }
-
-  const currentWord = words.value[currentWordIndex.value]
-  
-  // Use Web Speech API for text-to-speech
-  if ('speechSynthesis' in window) {
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel()
-    
-    const utterance = new SpeechSynthesisUtterance(currentWord)
-    utterance.rate = 0.8 // Slower speech for clarity
-    utterance.pitch = 1
-    utterance.volume = 1
-    
-    // Optional: Add a brief pause before speaking
-    utterance.onstart = () => {
-      console.log('Speaking hint:', currentWord)
-    }
-    
-    utterance.onend = () => {
-      // Reset timer after hint is spoken
-      resetHintTimer()
-    }
-    
-    window.speechSynthesis.speak(utterance)
-  }
-}
-
+// -------------------- Matching helpers --------------------
+function stripDiacritics(s) { return s.normalize('NFD').replace(/\p{Diacritic}+/gu, '') }
 function normalizeWord(word) {
-  // Remove punctuation and convert to lowercase
-  return word.toLowerCase().replace(/[.,!?;:'"]/g, '')
+  if (!word) return ''
+  const cleaned = stripDiacritics(String(word))
+    .toLowerCase()
+    .replace(/[“”"()\[\],.?!;:]/g, '')
+    .replace(/’/g, "'")
+    .replace(/[^a-z0-9'\-\s]/g, '')
+    .trim()
+  const map = { cant: "can't", dont: "don't", im: "i'm", youre: "you're", wasnt: "wasn't", isnt: "isn't", couldnt: "couldn't", wouldnt: "wouldn't" }
+  return map[cleaned] || cleaned
 }
-
-function checkWord(spokenText) {
-  if (currentWordIndex.value >= words.value.length) {
-    handleComplete()
-    return
+function levenshtein(a, b) {
+  if (a === b) return 0
+  if (!a.length) return b.length
+  if (!b.length) return a.length
+  const v0 = new Array(b.length + 1)
+  const v1 = new Array(b.length + 1)
+  for (let i = 0; i < v0.length; i++) v0[i] = i
+  for (let i = 0; i < a.length; i++) {
+    v1[0] = i + 1
+    for (let j = 0; j < b.length; j++) {
+      const cost = a[i] === b[j] ? 0 : 1
+      v1[j + 1] = Math.min(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost)
+    }
+    for (let j = 0; j < v0.length; j++) v0[j] = v1[j]
   }
+  return v1[b.length]
+}
+function similarity(a, b) {
+  a = normalizeWord(a); b = normalizeWord(b)
+  if (!a || !b) return 0
+  const dist = levenshtein(a, b)
+  const maxLen = Math.max(a.length, b.length)
+  return 1 - dist / Math.max(1, maxLen)
+}
+function similar(a, b, threshold = 0.75) { return similarity(a, b) >= threshold }
 
-  const currentWord = normalizeWord(words.value[currentWordIndex.value])
-  const spokenWords = spokenText.toLowerCase().split(' ')
-  
-  // Check if the current word is in the spoken text
-  for (let i = 0; i < spokenWords.length; i++) {
-    const spokenWord = normalizeWord(spokenWords[i])
-    
-    if (spokenWord === currentWord) {
-      // Correct word! Move to next
-      currentWordIndex.value++
-      transcript.value = '' // Reset transcript for next word
-      wrongAttempts.value = 0
-      lastWordTime.value = Date.now()
-      
-      // Check if reading is complete
-      if (currentWordIndex.value >= words.value.length) {
-        handleComplete()
+// -------------------- Word checking (fuzzy + alternatives) --------------------
+function checkWordCandidates(recentTokens, event) {
+  if (currentWordIndex.value >= words.value.length) { handleComplete(); return }
+  const target = normalizeWord(words.value[currentWordIndex.value])
+
+  // 1) recent tokens
+  for (const tok of recentTokens) {
+    if (similar(tok, target)) { acceptCorrect(); return }
+  }
+  // 2) alternatives
+  const lastRes = event.results[event.results.length - 1]
+  if (lastRes) {
+    for (let k = 0; k < lastRes.length; k++) {
+      const altPhrase = normalizeWord(lastRes[k].transcript || '')
+      for (const t of altPhrase.split(/\s+/)) {
+        if (similar(t, target)) { acceptCorrect(); return }
       }
-      break
-    } else if (spokenWord.length > 0 && !currentWord.startsWith(spokenWord.substring(0, 2))) {
-      // Wrong word spoken
-      wrongAttempts.value++
-      transcript.value = '' // Reset to try again
-      lastWordTime.value = Date.now()
-      resetHintTimer() // Reset timer on wrong attempt
     }
   }
+  // 3) count wrong if a clear non-match token was spoken
+  const lastToken = recentTokens[recentTokens.length - 1] || ''
+  if (lastToken && !similar(lastToken, target)) {
+    wrongAttempts.value++
+    transcript.value = ''
+    lastWordTime.value = Date.now()
+    resetHintTimer()
+  }
+
+  function acceptCorrect() {
+    currentWordIndex.value++
+    transcript.value = ''
+    wrongAttempts.value = 0
+    lastWordTime.value = Date.now()
+    if (currentWordIndex.value >= words.value.length) handleComplete()
+  }
 }
 
-function handleComplete() {
-  isReading.value = false
-  isPaused.value = false
-  
-  // Calculate final WPM
-  if (elapsedTime.value > 0) {
-    const minutes = elapsedTime.value / 60
-    finalWPM.value = Math.round(words.value.length / minutes)
+// -------------------- Hints (TTS) --------------------
+function resetHintTimer() {
+  if (hintTimer.value) { clearTimeout(hintTimer.value); hintTimer.value = null }
+  if (isReading.value && !isPaused.value && !isComplete.value) {
+    hintTimer.value = setTimeout(() => { speakHint() }, 5000)
   }
-  
-  pauseTimer()
-  
-  if (hintTimer.value) {
-    clearTimeout(hintTimer.value)
-    hintTimer.value = null
-  }
-  
-  if (recognition.value) {
-    recognition.value.stop()
-  }
-  
+}
+function speakHint() {
+  if (currentWordIndex.value >= words.value.length || !isReading.value || isPaused.value) return
+  if (Date.now() - lastWordTime.value < 4500) return // avoid speaking over the learner
+  const currentWord = words.value[currentWordIndex.value]
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel()
+    const u = new SpeechSynthesisUtterance(currentWord)
+    u.rate = 0.8; u.pitch = 1; u.volume = 1
+    u.onend = () => resetHintTimer()
+    window.speechSynthesis.speak(u)
   }
-
-  //NEW — enable Next button
-  isNextAvailable.value = true
-
-  setTimeout(() => {
-    resultStats.value = {
-      wpm: finalWPM.value,
-      time: formattedTime.value
-    }
-    showResultModal.value = true
-  }, 500)
-
 }
 
-
+// -------------------- Flow controls --------------------
 function handleStartReading() {
-  if (!recognition.value) {
-    const initialized = initSpeechRecognition()
-    if (!initialized) return
-  }
-
+  if (!recognition.value) { const ok = initSpeechRecognition(); if (!ok) return }
   isReading.value = true
   isPaused.value = false
-  
-  // Only reset if starting fresh (not continuing from pause)
-  if (currentWordIndex.value === 0 || isComplete.value) {
-    currentWordIndex.value = 0
-    wrongAttempts.value = 0
-    resetTimer()
-  }
-  
-  // Start timer
+  if (currentWordIndex.value === 0 || isComplete.value) { currentWordIndex.value = 0; wrongAttempts.value = 0; resetTimer() }
   startTimer()
-  
   transcript.value = ''
   lastWordTime.value = Date.now()
-  
-  try {
-    recognition.value.start()
-  } catch (e) {
-    console.log('Recognition already started')
-  }
-  
-  // Start hint timer
+  try { recognition.value.start() } catch (e) { console.log('Recognition already started') }
   resetHintTimer()
 }
 
 function handlePauseOrContinue() {
   if (isPaused.value) {
-    // Continue from where we paused
     isPaused.value = false
     isReading.value = true
     lastWordTime.value = Date.now()
-    
-    // Resume timer
     startTimer()
-    
-    try {
-      recognition.value.start()
-    } catch (e) {
-      console.log('Recognition already started')
-    }
-    
-    // Restart hint timer
+    try { recognition.value.start() } catch (e) { console.log('Recognition already started') }
     resetHintTimer()
   } else {
-    // Pause - save the current state
     isPaused.value = true
     isReading.value = false
-    
-    // Pause timer
     pauseTimer()
-    
-    // Clear hint timer
-    if (hintTimer.value) {
-      clearTimeout(hintTimer.value)
-      hintTimer.value = null
-    }
-    
-    if (recognition.value) {
-      recognition.value.stop()
-    }
-    
-    // Cancel any ongoing speech
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel()
-    }
+    if (hintTimer.value) { clearTimeout(hintTimer.value); hintTimer.value = null }
+    if (recognition.value) recognition.value.stop()
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel()
   }
 }
 
@@ -373,30 +318,15 @@ function handleStop() {
   currentWordIndex.value = 0
   transcript.value = ''
   wrongAttempts.value = 0
-  
-  // Reset timer
   resetTimer()
-  
-  // Clear hint timer
-  if (hintTimer.value) {
-    clearTimeout(hintTimer.value)
-    hintTimer.value = null
-  }
-  
-  if (recognition.value) {
-    recognition.value.stop()
-  }
-  
-  // Cancel any ongoing speech
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel()
-  }
+  if (hintTimer.value) { clearTimeout(hintTimer.value); hintTimer.value = null }
+  if (recognition.value) recognition.value.stop()
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel()
 }
 
 async function handleNext() {
   isNextAvailable.value = false
   loading.value = true
-  // Reset all progress
   currentWordIndex.value = 0
   transcript.value = ''
   wrongAttempts.value = 0
@@ -404,44 +334,31 @@ async function handleNext() {
   finalWPM.value = 0
   isReading.value = false
   isPaused.value = false
-
   await fetchContent()
   loading.value = false
 }
 
-function toggleDropdown() {
-  isDropdownOpen.value = !isDropdownOpen.value
-}
-
-function selectLevel(level) {
-  selectedLevel.value = level
-  isDropdownOpen.value = false
-  console.log('Level changed to:', selectedLevel.value)
-  // Fetch new content based on level
-  handleStop()
-  fetchContent()
-}
-
-function getCurrentLevelIcon() {
-  const level = levels.find(l => l.value === selectedLevel.value)
-  return level ? level.icon : '🌱'
-}
-
-function getWordClass(index) {
-  // If reading is complete, all words should be green
-  if (isComplete.value) {
-    return 'word-completed'
+function handleComplete() {
+  isReading.value = false
+  isPaused.value = false
+  if (elapsedTime.value > 0) {
+    const minutes = elapsedTime.value / 60
+    finalWPM.value = Math.round(words.value.length / minutes)
   }
-  
-  if (index < currentWordIndex.value) {
-    return 'word-completed'
-  } else if (index === currentWordIndex.value) {
-    return 'word-current'
-  } else {
-    return 'word-pending'
-  }
+  pauseTimer()
+  if (hintTimer.value) { clearTimeout(hintTimer.value); hintTimer.value = null }
+  if (recognition.value) recognition.value.stop()
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel()
+
+  // Enable Next + modal
+  isNextAvailable.value = true
+  setTimeout(() => {
+    resultStats.value = { wpm: finalWPM.value, time: formattedTime.value }
+    showResultModal.value = true
+  }, 500)
 }
 
+// -------------------- Mounted --------------------
 onMounted(() => {
   fetchContent()
   initSpeechRecognition()
@@ -453,7 +370,6 @@ onMounted(() => {
     <GameTopBar title="Reading Practice" />
     <WaveHeader top="80px" height="200px" zIndex="0" />
 
-    <!-- - Wrap this component -->
     <div class="title-wrapper">
       <GameTitleNDescribe
         title="Reading Practice"
@@ -478,7 +394,6 @@ onMounted(() => {
           <span class="icon">{{ isPaused ? '▶' : '⏸' }}</span> {{ isPaused ? 'Continue' : 'Pause' }}
         </button>
         
-        <!-- Stop Reading Button (always visible) -->
         <button 
           class="btn btn-stop"
           @click="handleStop"
@@ -487,7 +402,6 @@ onMounted(() => {
           <span class="icon">⏹</span> Stop Reading
         </button>
 
-        <!-- Next Button (always visible, but only active when complete) -->
         <button 
           class="btn btn-next"
           @click="handleNext"
@@ -495,8 +409,6 @@ onMounted(() => {
           <span class="icon">➡️</span> Next
         </button>
 
-
-        <!-- Custom Dropdown -->
         <div class="custom-dropdown">
           <button 
             class="dropdown-button"
@@ -523,7 +435,6 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- WPM and Timer Display -->
       <div class="stats-container">
         <div class="stat-card">
           <div class="stat-label">⏱️ Time</div>
@@ -539,7 +450,6 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Reading Progress -->
       <div class="progress-container">
         <div class="progress-bar">
           <div 
@@ -552,7 +462,6 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Content Display -->
       <div class="content-display">
         <p v-if="loading">Loading...</p>
         <p v-else-if="errorMsg" class="error">{{ errorMsg }}</p>
@@ -567,7 +476,6 @@ onMounted(() => {
             </span>
           </div>
           
-          <!-- Live Transcript Display -->
           <div v-if="isReading && !isPaused" class="transcript-display">
             <div class="transcript-label">🎤 Listening...</div>
             <div class="transcript-text">{{ transcript || 'Speak now...' }}</div>
@@ -579,14 +487,12 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- Paused Message -->
           <div v-if="isPaused" class="paused-display">
             <div class="paused-label">⏸️ Reading Paused</div>
             <div class="paused-text">Click "Continue" to resume from word {{ currentWordIndex + 1 }}</div>
             <div class="paused-stats">Timer paused at {{ formattedTime }}</div>
           </div>
 
-          <!-- Instructions -->
           <div class="instructions-toggle">
             <button 
                 class="btn-instructions" 
@@ -597,7 +503,6 @@ onMounted(() => {
             </button>
             </div>
 
-            <!-- Instructions (conditionally shown) -->
             <div v-if="showInstructions" class="instructions">
             <h3>📖 How to use:</h3>
             <ol>
@@ -616,7 +521,7 @@ onMounted(() => {
       </div>
 
     </div>
-    <!-- Result Popup Modal -->
+    
     <div v-if="showResultModal" class="modal-backdrop" @click.self="showResultModal = false">
       <div class="modal-card">
         <button class="modal-close" @click="showResultModal = false">×</button>
@@ -1062,88 +967,6 @@ onMounted(() => {
   }
 }
 
-@media (max-width: 768px) {
-  .control-buttons {
-    gap: 12px;
-  }
-  
-  .btn {
-    padding: 12px 24px;
-    font-size: 16px;
-  }
-  
-  .content-display {
-    padding: 24px;
-  }
-  
-  .dropdown-button {
-    min-width: 160px;
-    padding: 12px 20px;
-  }
-
-  .words-container {
-    font-size: 22px;
-    line-height: 2;
-  }
-
-  .word {
-    margin: 0 6px 10px 0;
-    padding: 6px 10px;
-  }
-}
-
-/* Instructions Toggle */
-.instructions-toggle {
-  margin-top: 30px;
-  text-align: center;
-}
-
-.btn-instructions {
-  padding: 12px 24px;
-  border: 2px solid #2196f3;
-  border-radius: 12px;
-  background: white;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: #2196f3;
-  font-family: inherit;
-}
-
-.btn-instructions:hover {
-  background: #e3f2fd;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
-}
-
-.btn-instructions .icon {
-  font-size: 18px;
-}
-
-/* Instructions - add slide animation */
-.instructions {
-  background: #e3f2fd;
-  border-radius: 12px;
-  padding: 25px;
-  margin-top: 20px;
-  animation: slideDown 0.3s ease;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* Next Button Styling */
 .btn-next {
   background: #2196f3;
@@ -1158,7 +981,7 @@ onMounted(() => {
 /* ----- Title Section Styling ----- */
 .title-wrapper {
   text-align: center;
-  margin-top: 60px;        /* pushes it nicely below the wave */
+  margin-top: 60px;
   margin-bottom: 40px;
   position: relative;
   z-index: 2;
@@ -1180,7 +1003,6 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-/* Responsive scaling for tablets/mobiles */
 @media (max-width: 768px) {
   .title-wrapper h1 {
     font-size: 36px;
@@ -1192,61 +1014,13 @@ onMounted(() => {
   }
 }
 
-/* ---------------- Page-Specific Fix: ReadingSpeed ---------------- */
-.title-wrapper .titlePart {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
-  margin-top: 40px !important;
-  margin-bottom: 40px !important;
-  padding: 0 10vw !important;
-  width: 100%;
-}
-
-/* Center the title (h1) */
-.title-wrapper .dw-head .head-row {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-}
-
-.title-wrapper .dw-head h1 {
-  text-align: center !important;
-  font-size: clamp(36px, 4vw, 56px) !important;
-  margin-bottom: 10px !important;
-  color: #1a1a1a !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.5px !important;
-}
-
-/* Center the description text */
-.title-wrapper .dw-head p {
-  text-align: center !important;
-  margin: 0 auto !important;
-  color: #555 !important;
-  transform: none !important;   /* Removes the translateX(30px) offset */
-  line-height: 1.6 !important;
-  max-width: 800px !important;
-  font-size: clamp(18px, 2.5vw, 22px) !important;
-}
-
-/* Optional: smooth fade-in animation (looks great below WaveHeader) */
-.title-wrapper .dw-head {
-  animation: fadeInUp 0.6s ease-out;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* Responsive title tweaks for your WaveHeader layout */
+.title-wrapper .titlePart { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; text-align: center !important; margin-top: 40px !important; margin-bottom: 40px !important; padding: 0 10vw !important; width: 100%; }
+.title-wrapper .dw-head .head-row { display: flex !important; justify-content: center !important; align-items: center !important; }
+.title-wrapper .dw-head h1 { text-align: center !important; font-size: clamp(36px, 4vw, 56px) !important; margin-bottom: 10px !important; color: #1a1a1a !important; font-weight: 800 !important; letter-spacing: 0.5px !important; }
+.title-wrapper .dw-head p { text-align: center !important; margin: 0 auto !important; color: #555 !important; transform: none !important; line-height: 1.6 !important; max-width: 800px !important; font-size: clamp(18px, 2.5vw, 22px) !important; }
+.title-wrapper .dw-head { animation: fadeInUp 0.6s ease-out; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 .page-container {
   background-color: #fdf8ea;
@@ -1268,25 +1042,14 @@ onMounted(() => {
   padding: 50px 60px;
   text-align: center;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  max-width: 650px;       /* Increased width */
+  max-width: 650px;
   width: 90%;
   position: relative;
   animation: fadeInUp 0.3s ease;
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(40px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .modal-title {
-  font-size: 2.2rem;       /* Bigger title */
+  font-size: 2.2rem;
   margin-bottom: 20px;
   color: #333;
   font-weight: 700;
@@ -1302,7 +1065,7 @@ onMounted(() => {
 .stats-box {
   background: #f8f9fa;
   border-radius: 10px;
-  padding: 25px 30px;      /* More breathing room */
+  padding: 25px 30px;
   margin-bottom: 30px;
   line-height: 1.8;
   font-size: 1.1rem;
@@ -1314,7 +1077,7 @@ onMounted(() => {
   position: absolute;
   top: 15px;
   right: 20px;
-  font-size: 28px;         /* Bigger close icon */
+  font-size: 28px;
   background: none;
   border: none;
   cursor: pointer;
@@ -1329,7 +1092,7 @@ onMounted(() => {
   background: #4CAF50;
   color: #fff;
   border: none;
-  padding: 14px 35px;      /* Bigger button */
+  padding: 14px 35px;
   font-size: 1.1rem;
   font-weight: 600;
   border-radius: 8px;
@@ -1341,5 +1104,4 @@ onMounted(() => {
   background: #45a049;
   transform: translateY(-2px);
 }
-
 </style>
