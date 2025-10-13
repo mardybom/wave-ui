@@ -75,7 +75,7 @@ const rebuildDisplayed = () => {
   if (!base) { displayed.value = ''; return }
   let out = base
   if (level.value === 'hard') {
-    const alpha = 'abcdefghijklmnopqrstuvwxyz'
+    const alpha = 'mqazteryupsdfghjklcvbnw'
     let r
     do { r = alpha[Math.floor(Math.random() * 26)] } while (r.toLowerCase() === base.toLowerCase())
     out += r
@@ -405,7 +405,7 @@ const goNext = async () => {
   clearCanvas()
   if (upperPartRef.value?.nextCard) upperPartRef.value.nextCard()
   else {
-    const letters = 'abcdefghijklmnopqrstuvwxyz'.split('')
+    const letters = 'mqazteryupsdfghjklcvbnw'.split('')
     const currentIndex = letters.indexOf(expectedLetter.value.toLowerCase())
     const idx = (currentIndex + 1) % letters.length
     expectedLetter.value = letters[idx]
