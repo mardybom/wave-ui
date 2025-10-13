@@ -5,7 +5,6 @@ import WaveHeader from '@/components/WaveHeader.vue'
 import GameTitleNDescribe from '@/components/GameTitleNDescribe.vue'
 import { apiPost } from '@/utils/api'
 
-// -------------------- State --------------------
 const currentContent = ref('')
 const loading = ref(true)
 const errorMsg = ref('')
@@ -28,7 +27,7 @@ const showResultModal = ref(false)
 const resultStats = ref({ wpm: 0, time: '' })
 const locale = ref(localStorage.getItem('reading_locale') || 'en-AU')
 
-// WPM tracking
+// WPM reading speed tracking
 const startTime = ref(0)
 const elapsedTime = ref(0)
 const timerInterval = ref(null)
@@ -55,12 +54,10 @@ const formattedTime = computed(() => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
 })
 
-// Watch for word changes to reset the hint timer
 watch([currentWordIndex, isReading, isPaused], () => {
   resetHintTimer()
 })
 
-// -------------------- Content (API) + Grammar --------------------
 async function fetchContent() {
   loading.value = true
   try {
@@ -100,7 +97,7 @@ function applyGrammar(wordsArr) {
   }
 }
 
-// -------------------- Timer --------------------
+// timer functions
 function startTimer() {
   startTime.value = Date.now() - elapsedTime.value * 1000
   timerInterval.value = setInterval(() => {
@@ -122,7 +119,6 @@ function resetTimer() {
   finalWPM.value = 0
 }
 
-// -------------------- UI helpers --------------------
 function toggleInstructions() { showInstructions.value = !showInstructions.value }
 function toggleDropdown() { isDropdownOpen.value = !isDropdownOpen.value }
 function selectLevel(level) { selectedLevel.value = level; isDropdownOpen.value = false; handleStop(); fetchContent() }
@@ -134,7 +130,6 @@ function getWordClass(index) {
   return 'word-pending'
 }
 
-// -------------------- ASR init --------------------
 function initSpeechRecognition() {
   if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
     errorMsg.value = 'Speech recognition is not supported in your browser. Please use Chrome or Edge.'
@@ -185,7 +180,7 @@ function initSpeechRecognition() {
   return true
 }
 
-// -------------------- Matching helpers --------------------
+// Matching utility functions
 function stripDiacritics(s) { return s.normalize('NFD').replace(/\p{Diacritic}+/gu, '') }
 function normalizeWord(word) {
   if (!word) return ''
@@ -224,16 +219,16 @@ function similarity(a, b) {
 }
 function similar(a, b, threshold = 0.75) { return similarity(a, b) >= threshold }
 
-// -------------------- Word checking (fuzzy + alternatives) --------------------
+// fuzzy word checking with alternatives
 function checkWordCandidates(recentTokens, event) {
   if (currentWordIndex.value >= words.value.length) { handleComplete(); return }
   const target = normalizeWord(words.value[currentWordIndex.value])
 
-  // 1) recent tokens
+  // recent tokens
   for (const tok of recentTokens) {
     if (similar(tok, target)) { acceptCorrect(); return }
   }
-  // 2) alternatives
+  // alternatives
   const lastRes = event.results[event.results.length - 1]
   if (lastRes) {
     for (let k = 0; k < lastRes.length; k++) {
@@ -243,7 +238,7 @@ function checkWordCandidates(recentTokens, event) {
       }
     }
   }
-  // 3) count wrong if a clear non-match token was spoken
+  // count wrong if a clear non-match token was spoken
   const lastToken = recentTokens[recentTokens.length - 1] || ''
   if (lastToken && !similar(lastToken, target)) {
     wrongAttempts.value++
@@ -261,7 +256,7 @@ function checkWordCandidates(recentTokens, event) {
   }
 }
 
-// -------------------- Hints (TTS) --------------------
+// Hints TTS function - we have to reset the hint timer after we give a hint
 function resetHintTimer() {
   if (hintTimer.value) { clearTimeout(hintTimer.value); hintTimer.value = null }
   if (isReading.value && !isPaused.value && !isComplete.value) {
