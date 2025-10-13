@@ -635,6 +635,620 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* General Styles */
+.content-wrapper {
+  max-width: 1400px;
+  margin: 50px auto;
+  padding: 0 20px;
+}
+
+.control-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+
+.btn {
+  padding: 16px 32px;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  font-family: inherit;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.icon {
+  font-size: 20px;
+}
+
+.btn-resume {
+  background: #4caf50;
+}
+
+.btn-resume:hover:not(:disabled) {
+  background: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.btn-pause {
+  background: #ffa726;
+}
+
+.btn-pause:hover:not(:disabled) {
+  background: #fb8c00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 167, 38, 0.3);
+}
+
+.btn-stop {
+  background: #ef5350;
+}
+
+.btn-stop:hover:not(:disabled) {
+  background: #e53935;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 83, 80, 0.3);
+}
+
+/* Custom Dropdown Styling */
+.custom-dropdown {
+  position: relative;
+}
+
+.dropdown-button {
+  padding: 16px 24px;
+  border: 3px solid #b8a8e8;
+  border-radius: 20px;
+  background: #d4c5f9;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #2d2d2d;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  min-width: 180px;
+}
+
+.dropdown-button:hover {
+  background: #c9b8f5;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(184, 168, 232, 0.4);
+}
+
+.level-icon {
+  font-size: 20px;
+}
+
+.level-text {
+  flex: 1;
+  text-align: left;
+}
+
+.dropdown-arrow {
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 3px solid #b8a8e8;
+  border-radius: 20px;
+  padding: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 240px;
+}
+
+.dropdown-item {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  font-size: 17px;
+  font-weight: 600;
+  color: #2d2d2d;
+}
+
+.dropdown-item:hover {
+  background: #f0f0f0;
+}
+
+.dropdown-item.active {
+  background: #d4c5f9;
+}
+
+.dropdown-item .level-icon {
+  font-size: 20px;
+}
+
+.dropdown-item .level-text {
+  flex: 1;
+  text-align: left;
+}
+
+.dropdown-item .level-arrow {
+  font-size: 12px;
+}
+
+/* Stats Container */
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.stat-label {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #2196f3;
+}
+
+/* Progress Bar */
+.progress-container {
+  margin-bottom: 30px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 30px;
+  background: #e0e0e0;
+  border-radius: 15px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, #8bc34a);
+  transition: width 0.5s ease;
+  border-radius: 15px;
+}
+
+.progress-text {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #555;
+}
+
+/* Content Display */
+.content-display {
+  background: white;
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-height: 300px;
+}
+
+.content-display p {
+  text-align: center;
+  font-size: 18px;
+  color: #666;
+}
+
+.error {
+  color: #ef5350;
+}
+
+.reading-content {
+  width: 100%;
+}
+
+.words-container {
+  font-size: 28px;
+  line-height: 2.5;
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.word {
+  display: inline-block;
+  margin: 0 8px 12px 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.word-pending {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.word-current {
+  background: #ffeb3b;
+  color: #000;
+  font-weight: 700;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(255, 235, 59, 0.5);
+  animation: pulse 1s infinite;
+}
+
+.word-completed {
+  background: #4caf50;
+  color: white;
+  font-weight: 600;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1.1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+/* Transcript Display */
+.transcript-display {
+  background: #f0f7ff;
+  border: 2px solid #2196f3;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 30px 0;
+}
+
+.transcript-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1976d2;
+  margin-bottom: 10px;
+}
+
+.transcript-text {
+  font-size: 20px;
+  color: #333;
+  min-height: 30px;
+  font-style: italic;
+}
+
+.wrong-attempts {
+  margin-top: 15px;
+  padding: 10px;
+  background: #ffebee;
+  border-radius: 8px;
+  color: #c62828;
+  font-weight: 600;
+  text-align: center;
+}
+
+.hint-info {
+  margin-top: 15px;
+  padding: 10px;
+  background: #fff9c4;
+  border-radius: 8px;
+  color: #f57f17;
+  font-weight: 600;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* Paused Display */
+.paused-display {
+  background: #fff3e0;
+  border: 2px solid #ffa726;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 30px 0;
+  text-align: center;
+}
+
+.paused-label {
+  font-size: 20px;
+  font-weight: 600;
+  color: #f57c00;
+  margin-bottom: 10px;
+}
+
+.paused-text {
+  font-size: 18px;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.paused-stats {
+  font-size: 16px;
+  color: #777;
+  font-style: italic;
+}
+
+/* Instructions */
+.instructions {
+  background: #e3f2fd;
+  border-radius: 12px;
+  padding: 25px;
+  margin-top: 30px;
+}
+
+.instructions h3 {
+  color: #1976d2;
+  margin-bottom: 15px;
+  font-size: 20px;
+}
+
+.instructions ol {
+  margin-left: 20px;
+  line-height: 1.8;
+  color: #555;
+}
+
+.instructions li {
+  margin-bottom: 8px;
+}
+
+.highlight-yellow {
+  background: #ffeb3b;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.highlight-green {
+  background: #4caf50;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* Completion Message */
+.completion-message {
+  background: linear-gradient(135deg, #4caf50, #8bc34a);
+  color: white;
+  padding: 30px;
+  border-radius: 16px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  margin-top: 30px;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  animation: slideIn 0.5s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .control-buttons {
+    gap: 12px;
+  }
+  
+  .btn {
+    padding: 12px 24px;
+    font-size: 16px;
+  }
+  
+  .content-display {
+    padding: 24px;
+  }
+  
+  .dropdown-button {
+    min-width: 160px;
+    padding: 12px 20px;
+  }
+
+  .words-container {
+    font-size: 22px;
+    line-height: 2;
+  }
+
+  .word {
+    margin: 0 6px 10px 0;
+    padding: 6px 10px;
+  }
+}
+
+/* Instructions Toggle */
+.instructions-toggle {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.btn-instructions {
+  padding: 12px 24px;
+  border: 2px solid #2196f3;
+  border-radius: 12px;
+  background: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #2196f3;
+  font-family: inherit;
+}
+
+.btn-instructions:hover {
+  background: #e3f2fd;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+.btn-instructions .icon {
+  font-size: 18px;
+}
+
+/* Instructions - add slide animation */
+.instructions {
+  background: #e3f2fd;
+  border-radius: 12px;
+  padding: 25px;
+  margin-top: 20px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Next Button Styling */
+.btn-next {
+  background: #2196f3;
+}
+
+.btn-next:hover:not(:disabled) {
+  background: #1976d2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+/* ----- Title Section Styling ----- */
+.title-wrapper {
+  text-align: center;
+  margin-top: 60px;        /* pushes it nicely below the wave */
+  margin-bottom: 40px;
+  position: relative;
+  z-index: 2;
+}
+
+.title-wrapper h1 {
+  font-size: 48px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 10px;
+  letter-spacing: 0.5px;
+}
+
+.title-wrapper p {
+  font-size: 20px;
+  color: #555;
+  line-height: 1.6;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Responsive scaling for tablets/mobiles */
+@media (max-width: 768px) {
+  .title-wrapper h1 {
+    font-size: 36px;
+  }
+
+  .title-wrapper p {
+    font-size: 16px;
+    padding: 0 10px;
+  }
+}
+
+/* ---------------- Page-Specific Fix: ReadingSpeed ---------------- */
+.title-wrapper .titlePart {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  margin-top: 40px !important;
+  margin-bottom: 40px !important;
+  padding: 0 10vw !important;
+  width: 100%;
+}
+
+/* Center the title (h1) */
+.title-wrapper .dw-head .head-row {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.title-wrapper .dw-head h1 {
+  text-align: center !important;
+  font-size: clamp(36px, 4vw, 56px) !important;
+  margin-bottom: 10px !important;
+  color: #1a1a1a !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Center the description text */
+.title-wrapper .dw-head p {
+  text-align: center !important;
+  margin: 0 auto !important;
+  color: #555 !important;
+  transform: none !important;   /* Removes the translateX(30px) offset */
+  line-height: 1.6 !important;
+  max-width: 800px !important;
+  font-size: clamp(18px, 2.5vw, 22px) !important;
+}
+
+/* Optional: smooth fade-in animation (looks great below WaveHeader) */
+.title-wrapper .dw-head {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .page-container {
   background-color: #fdf8ea;
 }
