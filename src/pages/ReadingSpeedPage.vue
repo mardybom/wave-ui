@@ -3,7 +3,6 @@ import { ref, onMounted, computed, watch } from 'vue'
 import GameTopBar from '@/components/GameTopBar.vue'
 import WaveHeader from '@/components/WaveHeader.vue'
 import GameTitleNDescribe from '@/components/GameTitleNDescribe.vue'
-import '@/assets/readingSpeed.css'
 import { apiPost } from '@/utils/api'
 
 const currentContent = ref('')
