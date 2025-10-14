@@ -340,7 +340,26 @@ function onMessageWasSent(message, done) {
 </template>
 
 <style>
-.sc-launcher { position: fixed !important; z-index: 99999 !important; }
+.sc-launcher { 
+  z-index: 99999 !important;
+}
+
+.sc-launcher::after{
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 6px #37B3EC;
+  pointer-events: none;
+  animation: pulse-glow 2s ease-in-out infinite !important;
+}
+
+@keyframes pulse-glow{
+  0%, 100% { box-shadow: 0 0 0 5px #37B3EC; transform: scale(1); }
+  50%      { box-shadow: 0 0 0 14px #37B3EC; transform: scale(1.10); }
+}
+
+
 .sc-chat-window {
   position: fixed !important;
   z-index: 9999 !important;
