@@ -22,6 +22,7 @@
     <!-- LEFT: Elephant / mascot -->
     <div class="left-hero" aria-hidden="true">
       <img class="elephant" src="@/assets/Elle_1.png" alt="" />
+      <button class="link" @click="emit('request-next-level')">Go to Level 2 ▶</button>
     </div>
 
     <!-- CENTER: Title, intro text, cards (two-up) -->
@@ -385,8 +386,20 @@ onBeforeUnmount(() => {
 }
 
 /* Left mascot */
-.left-hero { display: flex; align-items: center; justify-content: center; }
+.left-hero {display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; }
 .elephant { max-width: 450px; width: 100%; height: auto; }
+
+.link{
+  background:none;
+  transform: translateY(-15px);
+  bottom: 50px;
+  border:0;
+  text-decoration: underline;
+  color:#0f2b46;
+  cursor:pointer;
+  font-weight:700;
+}
+
 
 /* Center column */
 .title-row { display: flex; justify-content: center; }

@@ -4,6 +4,7 @@
 
 <style scoped>
 .copyright{
+  transform: translateY(-10px);
   text-align: center;
   color: #888;
   font-size: 14px;
