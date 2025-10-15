@@ -2,6 +2,8 @@
 import { ref, onMounted } from 'vue'
 import NavBar from '@/components/NavBar.vue'
 import WaveHeader from '@/components/WaveHeader.vue'
+import Copyright from '@/components/Copyright.vue'
+
 
 const fileInput = ref(null)
 const isProcessing = ref(false)
@@ -16,6 +18,7 @@ const currentWordIndex = ref(-1)
 const words = ref([])
 const utterance = ref(null)
 const isInstructionsOpen = ref(false)
+const fontSize = ref(14) // default font size in px
 
 let pdfjsLib = null
 let pdfMake = null
@@ -112,13 +115,13 @@ const processImage = async (file) => {
       content: [
         {
           text: text,
-          fontSize: 12,
+          fontSize: fontSize.value,
           margin: [0, 0, 0, 10]
         }
       ],
       defaultStyle: {
         font: 'OpenDyslexic',
-        fontSize: 12,
+        fontSize: fontSize.value,
         characterSpacing: 1.5,
         lineHeight: 2
       },
@@ -170,7 +173,7 @@ const processPDF = async (file) => {
       if (pageText) {
         content.push({
           text: pageText,
-          fontSize: 12,
+          fontSize: fontSize.value,
           margin: [0, 0, 0, 10]
         })
         fullText += pageText + ' '
@@ -194,7 +197,7 @@ const processPDF = async (file) => {
       content: content,
       defaultStyle: {
         font: 'OpenDyslexic',
-        fontSize: 12,
+        fontSize: fontSize.value,
         characterSpacing: 1.5,
         lineHeight: 2
       },
@@ -322,11 +325,12 @@ const toggleInstructions = () => {
 </script>
 
 <template>
+  <div class="page">
   <NavBar />
 
   <WaveHeader />
   
-  <div class="container">
+  <div class="container" v-cloak>
     <div class="upload-section">
       <h1>PDF & Image to OpenDyslexic Converter</h1>
       <p class="description">
@@ -389,6 +393,17 @@ const toggleInstructions = () => {
         {{ isProcessing ? 'Processing...' : 'Upload PDF or Image' }}
       </button>
       
+      <div v-if="extractedText" class="font-size-control">
+        <label for="font-size-slider">Font Size: {{ fontSize }}px</label>
+        <input
+          id="font-size-slider"
+          type="range"
+          min="10"
+          max="30"
+          v-model="fontSize"
+        />
+      </div>
+
       <div v-if="isProcessing" class="progress-container">
         <div class="progress-bar">
           <div 
@@ -454,7 +469,7 @@ const toggleInstructions = () => {
         </button>
       </div>
       
-      <div class="text-display">
+      <div class="text-display" :style="{ fontSize: fontSize + 'px' }">
         <span
           v-for="(word, index) in words"
           :key="index"
@@ -465,9 +480,21 @@ const toggleInstructions = () => {
       </div>
     </div>
   </div>
+  <Copyright />
+</div>
 </template>
 
 <style scoped>
+.page {
+  display: flex;               /* 建立垂直方向的 Flex 容器 */
+  flex-direction: column;      /* 元素从上到下排列 */
+  min-height: 100vh;           /* 页面至少占满视口高度 */
+}
+
+.page > :last-child {
+  margin-top: auto;            /* 把最后一个元素（比如 Copyright）推到底部 */
+}
+
 .container {
   max-width: 900px;
   margin: 0 auto;
@@ -751,4 +778,28 @@ h1 {
   transform: scale(1.05);
   box-shadow: 0 2px 4px rgba(255, 215, 0, 0.4);
 }
+
+.font-size-control {
+  margin: 16px 0 24px;
+  text-align: center;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+[v-cloak] .font-size-control {
+  opacity: 0;
+}
+
+.font-size-control label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #333;
+}
+
+.font-size-control input[type='range'] {
+  width: 200px;
+  accent-color: #4CAF50;
+  cursor: pointer;
+}
+
 </style>

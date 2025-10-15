@@ -1,5 +1,4 @@
-<!--
-==========================================================
+<!-- ==========================================================
 Component: ParentHubPage.vue
 ==========================================================
 
@@ -7,80 +6,64 @@ This component represents the Parent Hub main page of the application.
 It renders three key parts: a navigation bar (`NavBar.vue`), a FAQ/myths
 section (`ParentsFaqMyths`), and a chatbot (`ChatBot.vue`).
 
-The component handles communication between the chatbot interface and the backend API.
-When a user sends a message, it:
-1. Sends the question to the backend.
-2. Receives and parses the JSON response.
-3. Cleans and formats the `sources` to prevent auto-linking.
-4. Checks the `answer` for refusal messages.
-5. Passes a clean, structured result back to the ChatBot component for display.
+Now it uses the global `apiPost()` helper for backend calls, which
+automatically handles authentication and base URL from environment vars.
 
-Dependencies:
-- Vue 3 Composition API (`ref`)
-- Environment variable `VITE_API_SENTENCE` for backend URL
-- Child components: `NavBar`, `ParentsFaqMyths`, `ChatBot`
-
-==========================================================
-组件：ParentHubPage.vue
-==========================================================
-
-页面包含三个主要区域：导航栏、家长常见误区（FAQ/Myths）以及聊天机器人。
-该组件负责把用户问题转发给后端并清洗返回数据（处理 sources/免责声明），
-然后把标准化结果交给 ChatBot 显示；同时展示 Myths 区块与顶部波浪背景。
--->
+========================================================== -->
 
 <script setup>
 import NavBar from '@/components/NavBar.vue'
 import ParentsFaqMyths from '@/components/ParentsHub/myths.vue'
 import ChatBot from '@/components/ChatBot.vue'
 import { ref } from 'vue'
+import { apiPost } from '@/utils/api'  //  use the shared API helper
+import Copyright from '@/components/Copyright.vue'
+
 
 const isChatOpen = ref(false)
-const API_BASE = import.meta.env.VITE_API_SENTENCE
-const API_URL = `${API_BASE}/parent_chat`
 
 /**
  * Handles sending the user's question to the backend API and returns a structured response
  * for the ChatBot component (answer + cleaned sources + optional disclaimer).
  *
- * - POST to `/parent_chat`
- * - Insert \u2060 after every dot in [text] of markdown links to avoid auto-linking the label
- * - Reformat to `text(url)` so only URL stays clickable
- * - Drop disclaimer if the reply is the standard refusal line
+ * - Uses apiPost('/parent_chat', { question, kb_hit })
+ * - Cleans markdown labels to prevent unwanted auto-linking
+ * - Hides disclaimer for refusal answers
  */
 async function handleSend(text) {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question: text, kb_hit: '' }),
-  });
-  const json = await res.json();
+  try {
+    //  Call shared API helper
+    const json = await apiPost('/parent_chat', { question: text, kb_hit: '' })
 
-  const ZWNBSP = '\u2060'; // zero-width no-break space
+    const ZWNBSP = '\u2060' // zero-width no-break space
+    const rawSources = json?.data?.sources ?? []
 
-  const rawSources = json?.data?.sources ?? [];
-  const processedSources = rawSources.map((src) => {
-    // Expect markdown: [label](url)
-    const m = src.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-    if (!m) return src;
-    const displayText = m[1].replace(/\./g, `.${ZWNBSP}`); // break all dots in label
-    const url = m[2];
-    return `${displayText}(${url})`; // keep url clickable, label plain
-  });
+    // Process markdown sources
+    const processedSources = rawSources.map((src) => {
+      const m = src.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
+      if (!m) return src
+      const displayText = m[1].replace(/\./g, `.${ZWNBSP}`)
+      const url = m[2]
+      return `${displayText}(${url})`
+    })
 
-  const answer = json?.data?.answer ?? 'Sorry, something went wrong.';
-  let disclaimer = json?.data?.disclaimer ?? '';
+    const answer = json?.data?.answer ?? 'Sorry, something went wrong.'
+    let disclaimer = json?.data?.disclaimer ?? ''
 
-  // If refusal, hide disclaimer
-  if (answer.trim() === "Sorry, I can't answer this question.") {
-    disclaimer = '';
+    if (answer.trim() === "Sorry, I can't answer this question.") {
+      disclaimer = ''
+    }
+
+    return { answer, sources: processedSources, disclaimer }
+
+  } catch (error) {
+    console.error('❌ ParentHub API Error:', error)
+    return {
+      answer: 'Sorry, something went wrong while contacting the chatbot.',
+      sources: [],
+      disclaimer: ''
+    }
   }
-
-  return {
-    answer,
-    sources: processedSources,
-    disclaimer
-  };
 }
 </script>
 
@@ -102,20 +85,36 @@ async function handleSend(text) {
   </div>
 
   <!-- 家长常见误区 / FAQ 模块 -->
-  <ParentsFaqMyths />
+  <div class="faq-wrapper">
+    <ParentsFaqMyths />
+  </div>
 
   <!-- 聊天机器人 -->
   <ChatBot
     v-model="isChatOpen"
     title="Dyslexia Chatbot"
     :participants="[{ id: 'bot', name: 'Dyslexia Helper' }]"
-    :initialMessages="[{ type:'text', author:'bot', data:{ text: `Hi! I'm here to answer your questions about dyslexia.` }}]"
+    :initialMessages="[
+      { 
+        type:'text', 
+        author:'bot', 
+        data:{ text: `Hi! I'm here to answer your questions about dyslexia.` } 
+      }
+    ]"
     :onSend="handleSend"
   />
+  <Copyright />
 </template>
 
 <style scoped>
-.sky{
+.faq-wrapper {
+  width: 100vw;
+  max-width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.sky {
   position: absolute;
   top: var(--nav-h);
   left: 0; right: 0;
@@ -124,7 +123,7 @@ async function handleSend(text) {
   z-index: 0;
   pointer-events: none;
 }
-.wave{
+.wave {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -132,4 +131,11 @@ async function handleSend(text) {
   height: 50%;
 }
 .sc-launcher { position: fixed !important; z-index: 99999 !important; }
+
+@media (max-width: 720px) {
+  .faq-wrapper {
+    transform: scale(0.8);
+    transform-origin: top center;
+  }
+}
 </style>

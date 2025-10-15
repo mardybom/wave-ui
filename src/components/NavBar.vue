@@ -117,6 +117,15 @@ const links = [
   color: var(--ink-900); 
 }
 
+@media (max-width: 1350px) and (min-width: 721px) {
+  .link {
+    font-size: calc(16px + (24 - 16) * ((100vw - 720px) / (1350 - 720)));
+    padding:8px 0px;
+    gap:12px;
+  }
+
+}
+
 @media (max-width: 720px){
   .brand-text{ display:none; }
   .link{ gap:6px; padding:8px; }

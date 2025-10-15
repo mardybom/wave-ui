@@ -4,6 +4,10 @@ import GameTopBar from '@/components/GameTopBar.vue'
 import SentenceBuilder from '@/components/SentenceRearrangingPage/SentenceBuilder.vue'
 import WaveHeader from '@/components/WaveHeader.vue'
 import GameTitleNDescribe from '@/components/GameTitleNDescribe.vue'
+import { apiPost } from '@/utils/api'
+
+import ScreenSizeWarning from '@/components/ScreenSizeWarning.vue'
+
 
 const correctWords = ref([])
 const shuffledWords = ref([])
@@ -15,33 +19,34 @@ function onStarted() {
   /* timer removed—no-op is fine */
 }
 
-const API = `${import.meta.env.VITE_API_SENTENCE}/sentence/next`
 
 async function fetchSentence(level = currentLevel.value) {
   try {
-    loading.value = true
-    const res = await fetch(API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ level })
-    })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const data = await res.json()
-    correctWords.value  = data.data.original_sentence
-    shuffledWords.value = data.data.jumbled_sentence
-    currentLevel.value  = level
+    loading.value = true;
+    errorMsg.value = '';
+
+    // Use apiPost helper (automatically handles Basic Auth + base URL)
+    const data = await apiPost('/sentence/next', { level });
+
+    // Extract the results
+    correctWords.value  = data.data.original_sentence;
+    shuffledWords.value = data.data.jumbled_sentence;
+    currentLevel.value  = level;
+
   } catch (e) {
-    console.error(e)
-    errorMsg.value = 'Failed to load sentence.'
+    console.error('Sentence fetch error:', e);
+    errorMsg.value = 'Failed to load sentence.';
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
+
 
 onMounted(() => fetchSentence('Easy'))
 </script>
 
 <template>
+  <ScreenSizeWarning />
   <div class="page-container">
     <GameTopBar title="Sentence Rearranging" />
     <WaveHeader top="80px" height="200px" zIndex="0" />
@@ -78,6 +83,7 @@ onMounted(() => fetchSentence('Easy'))
   min-height: 100vh;
   width: 100vw;
   position: relative;
+  background-color: #fdf8ea;
 }
 
 /* Grid: elephant (left) | game (right) */

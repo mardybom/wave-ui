@@ -1,9 +1,10 @@
 <script setup>
 import { ref, reactive, computed, watch, nextTick, onBeforeUnmount, onMounted } from 'vue'
-import axios from 'axios'
 import GameTopBar from '@/components/GameTopBar.vue'
 import DrawingPad from '@/components/DigitalWritingPage/DrawingPad.vue'
 import UpperPart from '@/components/DigitalWritingPage/UpperPart.vue'
+import { apiPost } from '@/utils/api'
+
 
 import falseImg from '@/assets/hibby_feedback.png'
 import successVideoSrc from '@/assets/hibby_success.mp4'
@@ -12,6 +13,9 @@ import STAR_IMG from '@/assets/star_2.png'
 import BADGE_BRONZE_IMG from '@/assets/bronze.png'
 import BADGE_SILVER_IMG from '@/assets/silver.png'
 import BADGE_GOLD_IMG from '@/assets/gold.png'
+
+import ScreenSizeWarning from '@/components/ScreenSizeWarning.vue'
+
 
 const expectedLetter = ref('')
 const onReveal = async (ch) => { expectedLetter.value = ch; await nextTick(); startPromptCycle() }
@@ -71,7 +75,7 @@ const rebuildDisplayed = () => {
   if (!base) { displayed.value = ''; return }
   let out = base
   if (level.value === 'hard') {
-    const alpha = 'abcdefghijklmnopqrstuvwxyz'
+    const alpha = 'mqazteryupsdfghjklcvbnw'
     let r
     do { r = alpha[Math.floor(Math.random() * 26)] } while (r.toLowerCase() === base.toLowerCase())
     out += r
@@ -370,10 +374,11 @@ const captureAndBuildJson = async () => {
       level: level.value
     }
 
-    const res = await axios.post('https://wave-api-monashie.azurewebsites.net/alphabet_mastery', payload, { headers: { 'Content-Type': 'application/json' } })
+    // ✅ Use shared helper for secure API call
+    const data = await apiPost('/alphabet_mastery', payload)
 
-    isCorrect.value = res.data.is_correct
-    detectedCount.value = res.data.detected_count
+    isCorrect.value = data.is_correct
+    detectedCount.value = data.detected_count
     childResponded.value = true
     stopPromptCycle()
 
@@ -395,11 +400,12 @@ const captureAndBuildJson = async () => {
   }
 }
 
+
 const goNext = async () => {
   clearCanvas()
   if (upperPartRef.value?.nextCard) upperPartRef.value.nextCard()
   else {
-    const letters = 'abcdefghijklmnopqrstuvwxyz'.split('')
+    const letters = 'mqazteryupsdfghjklcvbnw'.split('')
     const currentIndex = letters.indexOf(expectedLetter.value.toLowerCase())
     const idx = (currentIndex + 1) % letters.length
     expectedLetter.value = letters[idx]
@@ -433,6 +439,7 @@ watch(showMilestone, async (v) => { if (v) { await nextTick(); ensureMedalInMile
 </script>
 
 <template>
+  <ScreenSizeWarning />
   <GameTopBar />
   <div class="sky" aria-hidden="true">
     <svg class="wave" viewBox="0 0 1440 220" preserveAspectRatio="none">
