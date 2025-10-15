@@ -13,7 +13,7 @@
     <div class="container grid">
       <header class="copy">
         <h1 id="hero-title">Surf the WAVE and Master English!</h1>
-        <p class="tagline">Play, Learn and practice English with us. WAVE makes learning joyful!</p>
+        <p class="tagline">Dyslexia-smart mini games that make English - Easy Peasy.</p>
 
         <div class="cta">
           <router-link to="/learn" class="btn btn--primary" aria-label="Start Playing">
