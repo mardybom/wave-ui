@@ -30,10 +30,10 @@ const emit = defineEmits(['started', 'changeLevel', 'update:level', 'next'])
 
 /* ---------- levels / dropdown ---------- */
 const levels = [
-  { label: '🌱 Easy ⏷', value: 'Easy' },
-  { label: '🌿 Medium ⏷', value: 'Medium' },
-  { label: '🌳 Hard ⏷', value: 'Hard' },
-  { label: '🔥 Extremely hard ⏷', value: 'Extremely hard' }
+  { label: '🌱 Easy', value: 'Easy' },
+  { label: '🌿 Medium', value: 'Medium' },
+  { label: '🌳 Hard', value: 'Hard' },
+  { label: '🔥 Extremely hard', value: 'Extremely hard' }
 ]
 const ddOpen = ref(false)
 const dropdownRef = ref(null)
