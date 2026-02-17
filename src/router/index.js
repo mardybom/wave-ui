@@ -10,18 +10,12 @@ import DocsConverterPage from '@/pages/DocsConverterPage.vue'
 import ReadingSpeedPage from '@/pages/ReadingSpeedPage.vue'
 
 
-const PasswordGate     = () => import('@/pages/PasswordGate.vue')
+
 const StartLearningPage = () => import('@/pages/StartLearningPage.vue')
 const ParentsHubPage   = () => import('@/pages/ParentsHubPage.vue')
 
-const PASS_KEY = 'wave_pw'
-function hasPass () {
-  return sessionStorage.getItem(PASS_KEY) === '1'
-}
-
 const routes = [
-  { path: '/gate', name: 'gate', component: PasswordGate },
-  { path: '/', name: 'home', component: HomePage },
+  { path: '/',          name: 'home',          component: HomePage },
   { path: '/learn',     name: 'startLearning', component: StartLearningPage },
   { path: '/parents',   name: 'parentsHub',    component: ParentsHubPage },
   { path: '/letter-sound',name: 'letterSoundMapping', component: LetterSoundMappingPage },
@@ -51,23 +45,15 @@ const routes = [
   
 ]
 
-const router = createRouter({
+export default createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior() {
+    scrollBehavior() {
     return new Promise((resolve) => {
-      setTimeout(() => {
+        setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' })
         resolve()
-      }, 100)
+        }, 100)
     })
-  },
+    },
 })
-
-router.beforeEach((to, from, next) => {
-  if (to.name === 'gate') return next()
-  if (hasPass()) return next()
-  next({ name: 'gate', query: { redirect: to.fullPath } })
-})
-
-export default router
